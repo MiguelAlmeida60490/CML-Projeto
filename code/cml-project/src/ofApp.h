@@ -25,16 +25,17 @@ class ofApp : public ofBaseApp{
 		vector<ofImage> images;
 
 
-		//new code for videos
-		vector<ofVideoPlayer>		videos;
+		vector<ofVideoPlayer> videos;
 
 
-		int currentMedia;
 		int countV = 0, countI = 0;
 
-		bool paused = true;
+		int cellWidth, cellHeight;
 
-		static const int ARROW_UP = 57357;
-		static const int ARROW_DOWN = 57359;
+		bool paused;
+
 		static const int BLANK_SPACE = 32;
+
+		typedef pair<float, float> Coordinate;
+		vector<Coordinate> coordinates;
 };

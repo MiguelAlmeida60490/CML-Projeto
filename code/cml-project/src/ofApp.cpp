@@ -1,30 +1,18 @@
+
+
 #include "ofApp.h"
 
+
 //--------------------------------------------------------------
+void ofApp::setup() {
 
-void ofApp::setup(){
-	//images.push_back(ofImage("pokemon.jpg"));
-	//images.push_back(ofImage("Solo-Leveling.jpg"));
-
-	
 	dir.listDir("");
-	dir.allowExt("jpg");
-	dir.allowExt("png");
 	dir.allowExt("mp4");
+	dir.allowExt("jpg");
 
-
-	/*if (dir.size()) {
-		images.assign(dir.size(), ofImage());
-	}
-
-
-	for (int i = 0; i < (int)dir.size(); i++) {
-		images[i].load(dir.getPath(i));
-	}*/
-
-	//new code for videos
 
 	dir.sort();
+
 
 	for (int i = 0; i < (int)dir.size(); i++) {
 		string extension = dir.getFile(i).getExtension();
@@ -40,72 +28,59 @@ void ofApp::setup(){
 	images.assign(countI, ofImage());
 	videos.assign(countV, ofVideoPlayer());
 
-	for (int k = 0; k < dir.size();k++) {
-		if (dir.getFile(k).getExtension() == "mp4")
-			videos[k - countI].load(dir.getPath(k));
-		else images[k].load(dir.getPath(k));
+	for (int pos = 0; pos < dir.size();pos++) {
+		if (dir.getFile(pos).getExtension() == "mp4")
+			videos[pos - countI].load(dir.getPath(pos));
+		else images[pos].load(dir.getPath(pos));
 	}
 
-	currentMedia = 0;
 
 	ofBackground(ofColor::purple);
 }
 
 //--------------------------------------------------------------
-void ofApp::update(){
-	if (dir.getFile(currentMedia).getExtension() == "mp4")
-		videos[currentMedia - countI].update();
+void ofApp::update() {
 }
 
 //--------------------------------------------------------------
-void ofApp::draw(){
+void ofApp::draw() {
 	int numCols = 6;
 	int numRows = 5;
 	int spacing = 10;
-	int cellWidth = (ofGetWidth() - (numCols + 1) * spacing) / numCols;
-	int cellHeight = (ofGetHeight() - (numRows + 1) * spacing) / numRows;
+	 cellWidth = (ofGetWidth() - (numCols + 1) * spacing) / numCols;
+	 cellHeight = (ofGetHeight() - (numRows + 1) * spacing) / numRows;
 
-	//if (!images.empty()) {
-		//int index = 0;
-		for (int row = 0; row < numRows && currentMedia < dir.size(); row++) {
-			for (int col = 0; col < numCols && currentMedia < dir.size(); col++) {
-				int x = col * (cellWidth + spacing) + spacing;
-				int y = row * (cellHeight + spacing) + spacing;
 
-				//images[index].draw(x, y, cellWidth, cellHeight);
-				if (dir.getFile(currentMedia).getExtension() != "mp4") {
-					images[currentMedia].draw(300, 192, 350, 350);//posicao no ecra primeiras 2, tamanho segundas 2
-				}
-				else {
-					videos[currentMedia - countI].draw(300, 192, 350, 350);//posicao no ecra primeiras 2, tamanho segundas 2
-				}
+	int currentMedia = 0;
 
-				//index++;
+	for (int row = 0; row < numRows && currentMedia < dir.size(); row++) {
+		for (int col = 0; col < numCols && currentMedia < dir.size(); col++) {
+			int x = col * (cellWidth + spacing) + spacing;
+			int y = row * (cellHeight + spacing) + spacing;
+
+			ofSetColor(ofColor::white);
+			if (currentMedia < countI) {
+				images[currentMedia].draw(x, y, cellWidth, cellHeight);//posicao no ecra primeiras 2, tamanho segundas 2
 			}
+			if (currentMedia < countV) {
+				videos[currentMedia].draw(x, y, cellWidth, cellHeight);//posicao no ecra primeiras 2, tamanho segundas 2
+				videos[currentMedia].update();
+				coordinates.push_back(pair(x,y));
+			}
+			ofSetColor(ofColor::gray);
+
+			currentMedia++;
 		}
-	//}
+	}
 }
 
 //--------------------------------------------------------------
 void ofApp::keyPressed(int key) {
 	switch (key) {
-	case ARROW_UP:
-		if (dir.size() > 0 && currentMedia > 0) {
-			currentMedia--;
-		}
-		break;
-
-	case ARROW_DOWN:
-		if (currentMedia < dir.size() - 1) {
-			currentMedia++;
-			//currentMedia %= dir.size();
-		}
-		break;
-
 	case BLANK_SPACE:
-		if (dir.getFile(currentMedia).getExtension() == "mp4") {
-			videos[currentMedia - countI].setPaused(!paused);
-			paused = !paused;
+		for (int i = 0; i < countV; i++) {
+			videos[i].setPaused(!paused);
+			//paused = !paused;
 		}
 		break;
 	}
@@ -128,11 +103,20 @@ void ofApp::mouseDragged(int x, int y, int button) {
 
 //--------------------------------------------------------------
 void ofApp::mousePressed(int x, int y, int button) {
+	for (int i = 0; i < countV;i++) {
+		if (x >= coordinates.at(i).first && x <= coordinates.at(i).first + cellWidth) {
+			if (y >= coordinates.at(i).second && y <= coordinates.at(i).second + cellHeight) {
+				videos[i].play();
+				videos[i].update();
+				paused = false;
+			}
+		}
+	}
+
 }
 
 //--------------------------------------------------------------
 void ofApp::mouseReleased(int x, int y, int button) {
-	
 
 }
 
@@ -153,11 +137,10 @@ void ofApp::windowResized(int w, int h) {
 
 //--------------------------------------------------------------
 void ofApp::gotMessage(ofMessage msg) {
-	
+
 }
 
 //--------------------------------------------------------------
-void ofApp::dragEvent(ofDragInfo dragInfo){ 
+void ofApp::dragEvent(ofDragInfo dragInfo) {
 
 }
-
