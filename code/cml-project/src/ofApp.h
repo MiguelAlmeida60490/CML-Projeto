@@ -23,4 +23,18 @@ class ofApp : public ofBaseApp{
 		
 		ofDirectory dir;
 		vector<ofImage> images;
+
+
+		//new code for videos
+		vector<ofVideoPlayer>		videos;
+
+
+		int currentMedia;
+		int countV = 0, countI = 0;
+
+		bool paused = true;
+
+		static const int ARROW_UP = 57357;
+		static const int ARROW_DOWN = 57359;
+		static const int BLANK_SPACE = 32;
 };
