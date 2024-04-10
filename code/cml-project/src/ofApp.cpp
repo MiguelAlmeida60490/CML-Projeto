@@ -37,14 +37,8 @@ void ofApp::draw(){
 
 	if (!images.empty()) {
 		int index = 0;
-		for (int row = 0; row < numRows; row++) {
-			if (index >= images.size()) {
-				break;
-			}
-			for (int col = 0; col < numCols; col++) {
-				if (index >= images.size()) {
-					break;
-				}
+		for (int row = 0; row < numRows && index < images.size(); row++) {
+			for (int col = 0; col < numCols && index < images.size(); col++) {
 				int x = col * (cellWidth + spacing) + spacing;
 				int y = row * (cellHeight + spacing) + spacing;
 
