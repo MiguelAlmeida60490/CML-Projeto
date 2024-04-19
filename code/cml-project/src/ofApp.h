@@ -38,4 +38,11 @@ class ofApp : public ofBaseApp{
 
 		typedef pair<float, float> Coordinate;
 		vector<Coordinate> coordinates;
+
+		ofVideoGrabber vidGrabber;
+		ofPixels videoInverted;
+		ofTexture videoTexture;
+		int camWidth;
+		int camHeight;
+		bool show_camera;
 };
