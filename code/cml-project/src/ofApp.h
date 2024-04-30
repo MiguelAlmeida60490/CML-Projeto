@@ -23,26 +23,22 @@ class ofApp : public ofBaseApp{
 		
 		ofDirectory dir;
 		vector<ofImage> images;
-
-
 		vector<ofVideoPlayer> videos;
 
 
 		int countV = 0, countI = 0;
-
 		int cellWidth, cellHeight;
 
-		bool paused;
-
-		static const int BLANK_SPACE = 32;
 
 		typedef pair<float, float> Coordinate;
-		vector<Coordinate> coordinates;
+		vector<Coordinate> video_coordinates, image_coordinates;
 
 		ofVideoGrabber vidGrabber;
 		ofPixels videoInverted;
 		ofTexture videoTexture;
-		int camWidth;
-		int camHeight;
-		bool show_camera;
+		int camWidth, camHeight;
+		bool paused, show_camera, image_resize, video_resize;
+		int pos_resize_video, pos_resize_image, mouse_x, mouse_y;
+
+		static const int BLANK_SPACE = 32;
 };
