@@ -1,6 +1,8 @@
 #pragma once
 
 #include "ofMain.h"
+#include <ofxCvHaarFinder.h>
+#include <ofxPanel.h>
 
 class ofApp : public ofBaseApp{
 
@@ -34,11 +36,20 @@ class ofApp : public ofBaseApp{
 		vector<Coordinate> video_coordinates, image_coordinates;
 
 		ofVideoGrabber vidGrabber;
-		ofPixels videoInverted;
-		ofTexture videoTexture;
+		//ofPixels video;
+		//ofTexture videoTexture;
 		int camWidth, camHeight;
-		bool paused, show_camera, image_resize, video_resize;
-		int pos_resize_video, pos_resize_image, mouse_x, mouse_y;
+		bool paused, show_camera, image_resize, video_resize, mouse_moved;
+		int mouse_x, mouse_y;
+		int pos_resize_image, pos_resize_video;
 
 		static const int BLANK_SPACE = 32;
+		static const int ROWS  = 5;
+		static const int COLS = 6;
+		static const int SPACING = 10;
+		ofxCvHaarFinder finder;
+		ofImage img;
+
+		ofxPanel gui;
+		ofxToggle togFullscreen;
 };
