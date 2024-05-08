@@ -111,7 +111,7 @@ void ofApp::draw() {
 					video_coordinates.push_back(pair(x, y));
 				}
 				else {
-					videos[currentV].bind();ofSetupOpenGL(1024, 768, OF_FULLSCREEN);
+					videos[currentV].bind();
 				}
 				currentV++;
 			}
