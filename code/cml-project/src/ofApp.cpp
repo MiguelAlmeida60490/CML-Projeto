@@ -1,5 +1,32 @@
 #include "ofApp.h"
 
+
+//--------------------------------------------------------------
+/*void ofApp::genXML(ofDirectory dir) {
+	for (int i = 0; i < dir.size(); i++) {
+		string extension = dir.getFile(i).getExtension();
+		cout << dir.getFile(i).get() << endl;
+		if (extension == "mp4" || extension == "jpg") {
+			ofxXmlSettings xml;
+			xml.addTag("file");
+			xml.addTag("metadata");
+			xml.addTag("tags");
+			xml.pushTag("file", i);
+			xml.addValue("name", dir.getName(i));
+			xml.addValue("path", dir.getPath(i));
+
+			
+			xml.pushTag("metadata");
+			xml.pushTag("tags");
+			xml.addValue("tag", "OF");
+			xml.addValue("tag", "openFrameworks");
+			xml.popTag();
+			xml.popTag();
+			xml.saveFile("data/xml/" + dir.getName(i) + ".xml");
+		}
+	}
+} */
+
 //--------------------------------------------------------------
 void ofApp::setup() {
 	camWidth = ofGetWidth() / 1.5;  // try to grab at this size.
@@ -28,8 +55,13 @@ void ofApp::setup() {
 
 	gui.setup();
 
-	gui.setPosition(ofGetWidth()/2 + 100,ofGetHeight()-100);
-	gui.add(togFullscreen.setup("fullscreen", false));
+	//gui.setPosition(ofGetWidth()/2 + 100,ofGetHeight()-100);
+	gui.add(togFullscreen.setup("Fullscreen", false));
+	gui.add(tags.setup("Tags", ""));
+	gui.add(luminance.setup("Luminance", 50, 0, 100));
+	gui.add(color.setup("Color", ofColor(100, 100, 140), ofColor(0, 0), ofColor(255, 255)));
+	gui.add(numFaces.setup("Number of Faces", 0, 0, 100));
+	gui.add(screenSize.setup("Screen Size", ofToString(ofGetWidth()) + "x" + ofToString(ofGetHeight())));
 
 	for (int i = 0; i < (int)dir.size(); i++) {
 		string extension = dir.getFile(i).getExtension();
@@ -55,6 +87,42 @@ void ofApp::setup() {
 			images[pos].load(dir.getPath(pos));
 	}
 	ofBackground(ofColor::purple);
+
+	for (ofImage img : images) {
+		ofPixels pixels = img.getPixels();
+
+		int r = 0, g = 0, b = 0, l = 0;
+		for (int x = 0; x < pixels.getWidth(); x++) {
+			for (int y = 0; y < pixels.getHeight(); y++) {
+				ofColor color = pixels.getColor(x, y);
+
+				r += color.r;
+				g += color.g;
+				b += color.b;
+			}
+		}
+
+		int pixels_size = pixels.getWidth() * pixels.getHeight();
+
+
+		int avg_r = r / pixels_size;
+		int avg_g = g / pixels_size;
+		int avg_b = b / pixels_size;
+		int avg_l = 0.2125 * avg_r + 0.7154 * avg_g + 0.0721 * avg_b;
+
+		finder.findHaarObjects(img);
+
+		cout << "new image" << endl;
+		cout << avg_r << endl;
+		cout << avg_g << endl;
+		cout << avg_b << endl;
+		cout << avg_l << endl;
+		cout << finder.blobs.size() << endl;
+
+		int avgColor[3] = { r,g,b };
+	}
+
+	//genXML(dir);
 }
 
 //--------------------------------------------------------------
@@ -64,17 +132,11 @@ void ofApp::update() {
 			ofPixels& pixels = vidGrabber.getPixels();
 			img = ofImage(pixels);
 			finder.findHaarObjects(img);
+			cout << finder.blobs.size() << endl;
 		}
 		vidGrabber.update();
 	}
-	if (togFullscreen) {
-		ofSetFullscreen(true);	
-		gui.setPosition(ofGetWidth() / 2 + 100, ofGetHeight() - 100);
-	}
-	else {
-		ofSetFullscreen(false);
-		gui.setPosition(ofGetWidth() / 2 + 100, ofGetHeight() - 100);
-	}
+
 }
 
 //--------------------------------------------------------------
@@ -88,7 +150,7 @@ void ofApp::draw() {
 	int currentV = 0;
 
 	for (int row = 0; row < ROWS && currentI + currentV < dir.size(); row++) {
-		for (int col = 0; col < COLS && currentI + currentV < dir.size(); col++) {
+		for (int col = 1; col < COLS && currentI + currentV < dir.size(); col++) {
 			int x = col * (cellWidth + SPACING) + SPACING;
 			int y = row * (cellHeight + SPACING) + SPACING;
 
@@ -163,27 +225,18 @@ void ofApp::draw() {
 void ofApp::keyPressed(int key) {
 	switch (key) {
 	case BLANK_SPACE:
-		for (int i = 0; i < countV;i++) {
-			if (mouse_x >= video_coordinates.at(i).first && mouse_x <= video_coordinates.at(i).first + cellWidth) {
-				if (mouse_y >= video_coordinates.at(i).second && mouse_y <= video_coordinates.at(i).second + cellHeight) {
-					paused = !paused;
-					videos[i].setPaused(paused);
-				}
-			}
+		if (pos_resize_video != -1) {
+			paused = !paused;
+			videos[pos_resize_video].setPaused(paused);
 		}
 		break;
 	case 99: //c
 		show_camera = !show_camera;
 		break;
 	case 112://p -> play video
-		for (int i = 0; i < countV;i++) {
-			if (mouse_x >= video_coordinates.at(i).first && mouse_x <= video_coordinates.at(i).first + cellWidth) {
-				if (mouse_y >= video_coordinates.at(i).second && mouse_y <= video_coordinates.at(i).second + cellHeight) {
-					videos[i].play();
-					videos[i].update();
-					paused = false;
-				}
-			}
+		if (pos_resize_video != -1) {
+			videos[pos_resize_video].play();
+			paused = false;
 		}
 		break;
 	}
@@ -210,19 +263,7 @@ void ofApp::mousePressed(int x, int y, int button) {
 	mouse_x = x;
 	mouse_y = y;
 
-	for (int i = 0; i < countV;i++) {
-		if (x >= video_coordinates.at(i).first && x <= video_coordinates.at(i).first + cellWidth) {
-			if (y >= video_coordinates.at(i).second && y <= video_coordinates.at(i).second + cellHeight) {
-				if (pos_resize_video == i) {
-					pos_resize_video = -1;
-				}
-				else {
-					pos_resize_video = i;
-				}
-			}
-		}
-	}
-	for (int i = 0; i < countI;i++) {
+	for (int i = 0; i < countI; i++) {
 		if (x >= image_coordinates.at(i).first && x <= image_coordinates.at(i).first + cellWidth) {
 			if (y >= image_coordinates.at(i).second && y <= image_coordinates.at(i).second + cellHeight) {
 				if (pos_resize_image == i) {
@@ -230,13 +271,26 @@ void ofApp::mousePressed(int x, int y, int button) {
 				}
 				else {
 					pos_resize_image = i;
+					pos_resize_video = -1;
 				}
 			}
 		}
 	}
 
+	for (int i = 0; i < countV; i++) {
+		if (x >= video_coordinates.at(i).first && x <= video_coordinates.at(i).first + cellWidth) {
+			if (y >= video_coordinates.at(i).second && y <= video_coordinates.at(i).second + cellHeight) {
+				if (pos_resize_video == i) {
+					pos_resize_video = -1;
+				}
+				else {
+					pos_resize_video = i;
+					pos_resize_image = -1;
+				}
+			}
+		}
+	}
 }
-
 //--------------------------------------------------------------
 void ofApp::mouseReleased(int x, int y, int button) {
 	mouse_x = x;

@@ -1,5 +1,4 @@
 ofxOpenCv
-ofxCv-master
+ofxCv
 ofxGui
-ofxUI-master
 ofxXmlSettings
