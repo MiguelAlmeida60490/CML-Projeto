@@ -1,32 +1,176 @@
 #include "ofApp.h"
+#include "ofFileUtils.h"
 
 
 //--------------------------------------------------------------
 /*void ofApp::genXML(ofDirectory dir) {
+	cout << "Generating metadata" << endl;
 	for (int i = 0; i < dir.size(); i++) {
 		string extension = dir.getFile(i).getExtension();
-		cout << dir.getFile(i).get() << endl;
 		if (extension == "mp4" || extension == "jpg") {
 			ofxXmlSettings xml;
-			xml.addTag("file");
-			xml.addTag("metadata");
-			xml.addTag("tags");
-			xml.pushTag("file", i);
-			xml.addValue("name", dir.getName(i));
-			xml.addValue("path", dir.getPath(i));
-
-			
+			if (!xml.tagExists("metadata")) {
+				xml.addTag("metadata");
+			}
 			xml.pushTag("metadata");
-			xml.pushTag("tags");
-			xml.addValue("tag", "OF");
-			xml.addValue("tag", "openFrameworks");
-			xml.popTag();
-			xml.popTag();
-			xml.saveFile("data/xml/" + dir.getName(i) + ".xml");
+
+			if (!xml.tagExists("tags")) {
+				xml.addTag("tags");
+				xml.pushTag("tags");
+				xml.popTag();
+			}
+
+			if (!xml.tagExists("luminance")) {
+				//xml.addTag("luminance");
+				//xml.pushTag("luminance");
+				//xml.addValue("luminance", avg_l);
+				//xml.popTag();
+			}
+
+			if (!xml.tagExists("color")) {
+				//Insert on XML
+				//xml.addTag("color");
+				//xml.pushTag("color");
+				//xml.addValue("r", avg_r);
+				//xml.addValue("g", avg_g);
+				//xml.addValue("b", avg_b);
+				//xml.popTag();
+			}
+
+			if (!xml.tagExists("faces")) {
+
+			}
+
+			if (!xml.tagExists("edges")) {
+
+			}
+
+			if (!xml.tagExists("cuts")) {
+
+			}
+
+			if (!xml.tagExists("textures")) {
+
+			}
+			string fileName = ofFilePath::getBaseName(dir.getName(i));
+			xml.saveFile(fileName + ".xml");
+
 		}
 	}
-} */
+	cout << "Generated metadata successfully" << endl;
+}
+*/
 
+void ofApp::genXML(ofDirectory dir) {
+	cout << "Generating metadata" << endl;
+	for (int i = 0; i < dir.size(); i++) {
+		string fileName = ofFilePath::getBaseName(dir.getName(i));
+		string extension = dir.getFile(i).getExtension();
+		if (extension == "jpg") {
+			ofImage image = dir.getFile(i);
+			ofPixels pixels = image.getPixels();
+			int avg_r, avg_g, avg_b, avg_l, nFaces;
+
+			//FUNCTION TO GET RGB, L AND NUMBERFACES
+			int r = 0, g = 0, b = 0, l = 0;
+			for (int x = 0; x < pixels.getWidth(); x++) {
+				for (int y = 0; y < pixels.getHeight(); y++) {
+					ofColor color = pixels.getColor(x, y);
+
+					r += color.r;
+					g += color.g;
+					b += color.b;
+				}
+			}
+
+			int pixels_size = pixels.getWidth() * pixels.getHeight();
+
+
+			avg_r = r / pixels_size;
+			avg_g = g / pixels_size;
+			avg_b = b / pixels_size;
+			avg_l = 0.2125 * avg_r + 0.7154 * avg_g + 0.0721 * avg_b;
+
+			finder.findHaarObjects(img);
+
+			nFaces = finder.blobs.size();
+
+			//INSERTION OF THE METADATA ON THE XML FILE
+			if (!xml.tagExists(fileName)) {
+				xml.addTag(fileName);
+			}
+			xml.pushTag(fileName);
+
+			if (!xml.tagExists("metadata")) {
+				xml.addTag("metadata");
+			}
+			xml.pushTag("metadata");
+			if (!xml.tagExists("tags")) {
+				xml.addTag("tags");
+				xml.pushTag("tags");
+				xml.popTag();
+			}
+			if (!xml.tagExists("color")) {
+				xml.addTag("color");
+				xml.pushTag("color");
+				xml.addValue("r", avg_r);
+				xml.addValue("g", avg_g);
+				xml.addValue("b", avg_b);
+				xml.popTag();
+			}
+			if (!xml.tagExists("luminance")) {
+				xml.addTag("luminance");
+				xml.pushTag("luminance");
+				xml.addValue("luminance", avg_l);
+				xml.popTag();
+			}
+			if (!xml.tagExists("edges")) {
+				xml.addTag("edges");
+				xml.pushTag("edges");
+				//TODO
+				xml.popTag();
+			}
+			if (!xml.tagExists("textures")) {
+				xml.addTag("textures");
+				xml.pushTag("textures");
+				//TODO
+				xml.popTag();
+			}
+			if (!xml.tagExists("numberFaces")) {
+				xml.addTag("numberFaces");
+				xml.pushTag("numberFaces");
+				cout << nFaces << endl;
+				xml.addValue("numberOfFaces", nFaces);
+				xml.popTag();
+			}
+			xml.popTag();
+			xml.popTag();
+		}
+		else if (extension == "mp4") {
+			if (!xml.tagExists(fileName)) {
+				xml.addTag(fileName);
+			}
+			xml.pushTag(fileName);
+
+			if (!xml.tagExists("metadata")) {
+				xml.addTag("metadata");
+			}
+			xml.pushTag("metadata");
+			if (!xml.tagExists("tags")) {
+				xml.addTag("tags");
+				xml.pushTag("tags");
+				xml.popTag();
+			}
+			xml.popTag();
+			xml.popTag();
+		}
+		else {
+			cout << dir.getFile(i).getFileName() + " is not an image or a video" << endl;
+		}
+	}
+	xml.saveFile("metadata.xml");
+	cout << "Generated metadata successfully" << endl;
+}
 //--------------------------------------------------------------
 void ofApp::setup() {
 	camWidth = ofGetWidth() / 1.5;  // try to grab at this size.
@@ -88,6 +232,14 @@ void ofApp::setup() {
 	}
 	ofBackground(ofColor::purple);
 
+	if (xml.loadFile("metadata.xml")) {
+		cout << "There is a xml file already" << endl;
+	}
+	else {
+		cout << "metadata.xml does not exist. Gonna generate it" << endl;
+		genXML(dir);
+	}
+
 	for (ofImage img : images) {
 		ofPixels pixels = img.getPixels();
 
@@ -122,7 +274,7 @@ void ofApp::setup() {
 		int avgColor[3] = { r,g,b };
 	}
 
-	//genXML(dir);
+	
 }
 
 //--------------------------------------------------------------

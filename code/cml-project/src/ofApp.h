@@ -24,7 +24,7 @@ class ofApp : public ofBaseApp{
 		void windowResized(int w, int h);
 		void dragEvent(ofDragInfo dragInfo);
 		void gotMessage(ofMessage msg);
-		//void genXML(ofDirectory imageDir);
+		void genXML(ofDirectory dir);
 		
 		ofDirectory dir;
 		vector<ofImage> images;
@@ -35,6 +35,7 @@ class ofApp : public ofBaseApp{
 		ofxLabel screenSize;
 		ofxIntField numFaces;
 		ofxInputField<string> tags;
+		ofxXmlSettings xml;
 
 
 		int countV = 0, countI = 0;
