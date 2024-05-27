@@ -1,6 +1,41 @@
 #include "ofApp.h"
 #include "ofFileUtils.h"
+#include "../xml_algorithms.h"
 
+
+
+void ofApp::getEdgesandTextures(xml_algorithms myObj, ofImage image) {
+	myObj.setFilter(image, true);
+	double* avg_vector = myObj.getAvgEdges();
+	double* dev_vector = myObj.getVarianceEdges();
+
+
+	myObj.setFilter(image, false);
+	double* avg_gabor = myObj.getAvgGabor();
+	double* dev_gabor = myObj.getVarianceGabor();
+
+	/*
+	cout << "EDGES FILTER: ";
+	cout << endl;
+	cout << "New Image: ";
+	for (int i = 0; i < myObj.NUM_EDGES_IMAGES; ++i) {
+		cout << "AVG pixel: " << avg_vector[i];
+		cout << " VAR pixel: " << dev_vector[i] << ", ";
+	}
+
+	cout << endl;
+
+	cout << "GABOR FILTER: ";
+	cout << endl;
+
+	cout << "New Image: ";
+	for (int i = 0; i < myObj.NUM_GABOR_IMAGES; ++i) {
+		cout << "AVG pixel: " << avg_gabor[i];
+		cout << " VAR pixel: " << dev_gabor[i] << ", ";
+	}
+
+	cout << endl;*/
+}
 
 //--------------------------------------------------------------
 /*void ofApp::genXML(ofDirectory dir) {
@@ -61,8 +96,10 @@
 }
 */
 
+
+/*
 void ofApp::genXML(ofDirectory dir) {
-	cout << "Generating metadata" << endl;
+	//cout << "Generating metadata" << endl;
 	for (int i = 0; i < dir.size(); i++) {
 		string fileName = ofFilePath::getBaseName(dir.getName(i));
 		string extension = dir.getFile(i).getExtension();
@@ -170,7 +207,7 @@ void ofApp::genXML(ofDirectory dir) {
 	}
 	xml.saveFile("metadata.xml");
 	cout << "Generated metadata successfully" << endl;
-}
+}*/
 //--------------------------------------------------------------
 void ofApp::setup() {
 	camWidth = ofGetWidth() / 1.5;  // try to grab at this size.
@@ -188,6 +225,8 @@ void ofApp::setup() {
 
 	ofSetVerticalSync(true);
 	show_camera = false;
+
+
 	pos_resize_video = -1, pos_resize_image = -1;
 
 	dir.listDir("");
@@ -233,48 +272,35 @@ void ofApp::setup() {
 	ofBackground(ofColor::purple);
 
 	if (xml.loadFile("metadata.xml")) {
-		cout << "There is a xml file already" << endl;
+		//cout << "There is a xml file already" << endl;
 	}
 	else {
-		cout << "metadata.xml does not exist. Gonna generate it" << endl;
-		genXML(dir);
+		//cout << "metadata.xml does not exist. Gonna generate it" << endl;
+		//genXML(dir);
 	}
+
+	xml_algorithms myObj;
 
 	for (ofImage img : images) {
-		ofPixels pixels = img.getPixels();
-
-		int r = 0, g = 0, b = 0, l = 0;
-		for (int x = 0; x < pixels.getWidth(); x++) {
-			for (int y = 0; y < pixels.getHeight(); y++) {
-				ofColor color = pixels.getColor(x, y);
-
-				r += color.r;
-				g += color.g;
-				b += color.b;
-			}
-		}
-
-		int pixels_size = pixels.getWidth() * pixels.getHeight();
-
-
-		int avg_r = r / pixels_size;
-		int avg_g = g / pixels_size;
-		int avg_b = b / pixels_size;
-		int avg_l = 0.2125 * avg_r + 0.7154 * avg_g + 0.0721 * avg_b;
-
 		finder.findHaarObjects(img);
+		int nFaces = finder.blobs.size();
+		int* img_colors = myObj.getColor(img);
+				int img_lum = myObj.getLuminance();
 
-		cout << "new image" << endl;
-		cout << avg_r << endl;
-		cout << avg_g << endl;
-		cout << avg_b << endl;
-		cout << avg_l << endl;
-		cout << finder.blobs.size() << endl;
+		/*
+		cout << "IMAGE COLORS: ";
+		cout << endl;
+		cout << "R: " << img_colors[0] << " G: " << img_colors[1] << " B: " << img_colors[2];
+		cout << endl;
+		
+		cout << "IMAGE LUMINANCE: ";
+		cout << endl;
+		cout << img_lum;
+		cout << endl;*/
 
-		int avgColor[3] = { r,g,b };
+		getEdgesandTextures(myObj, img);
 	}
 
-	
 }
 
 //--------------------------------------------------------------
@@ -294,15 +320,16 @@ void ofApp::update() {
 //--------------------------------------------------------------
 void ofApp::draw() {
 	gui.draw();
-	
+
 	cellWidth = (ofGetWidth() - (COLS + 1) * SPACING) / COLS;
 	cellHeight = (ofGetHeight() - (ROWS + 1) * SPACING) / ROWS;
 
 	int currentI = 0;
 	int currentV = 0;
 
-	for (int row = 0; row < ROWS && currentI + currentV < dir.size(); row++) {
-		for (int col = 1; col < COLS && currentI + currentV < dir.size(); col++) {
+	for (int row = 0; row < ROWS; row++) {
+		for (int col = 1; col < COLS; col++) {
+
 			int x = col * (cellWidth + SPACING) + SPACING;
 			int y = row * (cellHeight + SPACING) + SPACING;
 
@@ -334,24 +361,66 @@ void ofApp::draw() {
 	}
 
 	if (pos_resize_image != -1 && !mouse_moved) {
-		ofSetColor(ofColor::white);
-		images[pos_resize_image].resize(cellWidth + 100, cellWidth + 100);//posicao no ecra primeiras 2, tamanho segundas 2
-		images[pos_resize_image].draw(image_coordinates.at(pos_resize_image).first, image_coordinates.at(pos_resize_image).second);
-		ofSetColor(ofColor::gray);
+		for (int i = 0; i < image_coordinates.size();i++) {
+			int x = image_coordinates[i].first;
+			int y = image_coordinates[i].second;
+
+			ofSetColor(ofColor::white);
+			images[pos_resize_image].resize(cellWidth + 100, cellWidth + 100);//posicao no ecra primeiras 2, tamanho segundas 2
+			if ( x>= 815 && y>= 550 && pos_resize_image == i) {
+				images[pos_resize_image].draw(image_coordinates.at(pos_resize_image).first - 100, image_coordinates.at(pos_resize_image).second - 200);
+			}
+			else if (x>= 815 && pos_resize_image==i) {
+				images[pos_resize_image].draw(image_coordinates.at(pos_resize_image).first -100, image_coordinates.at(pos_resize_image).second);
+			}
+			else if (y >= 550 && pos_resize_image == i) {
+				images[pos_resize_image].draw(image_coordinates.at(pos_resize_image).first, image_coordinates.at(pos_resize_image).second - 200);
+			}
+			else {
+				if (pos_resize_image == i) {
+					images[pos_resize_image].draw(image_coordinates.at(pos_resize_image).first, image_coordinates.at(pos_resize_image).second);
+				}
+			}
+			ofSetColor(ofColor::gray);
+		}
 	}
 
+
 	if (pos_resize_video != -1 && !mouse_moved) {
-		ofSetColor(ofColor::white);
-		videos[pos_resize_video].draw(video_coordinates.at(pos_resize_video).first, video_coordinates.at(pos_resize_video).second, cellWidth + 100, cellWidth + 100);
-		videos[pos_resize_video].update();
-		ofSetColor(ofColor::gray);
+		for (int i = 0; i < video_coordinates.size();i++) {
+			int x = video_coordinates[i].first;
+			int y = video_coordinates[i].second;
+			ofSetColor(ofColor::white);
+			if (x >= 815 && y >= 550 && pos_resize_video == i) {
+				videos[pos_resize_video].draw(x - 100, y - 200, cellWidth + 100, cellWidth + 100);;
+				ofSetColor(ofColor::gray);
+				videos[pos_resize_video].update();
+			}
+			else if (x >= 815 && pos_resize_video == i) {
+				videos[pos_resize_video].draw(x - 100,y, cellWidth + 100, cellWidth + 100);
+				ofSetColor(ofColor::gray);
+				videos[pos_resize_video].update();
+			}
+			else if (y >= 550 && pos_resize_video == i) {
+				videos[pos_resize_video].draw(x, y-200, cellWidth + 100, cellWidth + 100);
+				ofSetColor(ofColor::gray);
+				videos[pos_resize_video].update();
+			}
+			else {
+				if (pos_resize_video == i) {
+					videos[pos_resize_video].draw(x, y, cellWidth + 100, cellWidth + 100);
+					ofSetColor(ofColor::gray);
+					videos[pos_resize_video].update();
+				}
+			}
+		}
 	}
 
 	if (pos_resize_video != -1 && mouse_moved) {
-		ofSetColor(ofColor::white);
-		videos[pos_resize_video].draw(mouse_x, mouse_y, cellWidth + 100, cellWidth + 100);
-		videos[pos_resize_video].update();
-		ofSetColor(ofColor::gray);
+		 ofSetColor(ofColor::white);
+		 videos[pos_resize_video].draw(mouse_x, mouse_y, cellWidth + 100, cellWidth + 100);
+		 videos[pos_resize_video].update();
+		 ofSetColor(ofColor::gray);
 	}
 
 
@@ -400,13 +469,15 @@ void ofApp::keyReleased(int key) {
 
 //--------------------------------------------------------------
 void ofApp::mouseMoved(int x, int y) {
+
 }
 
 //--------------------------------------------------------------
 void ofApp::mouseDragged(int x, int y, int button) {
+	mouse_x = x - cellWidth;
+	mouse_y = y - cellHeight;
+	
 	mouse_moved = true;
-	mouse_x = x;
-	mouse_y = y;
 }
 
 //--------------------------------------------------------------
@@ -414,6 +485,7 @@ void ofApp::mousePressed(int x, int y, int button) {
 	mouse_moved = false;
 	mouse_x = x;
 	mouse_y = y;
+	
 
 	for (int i = 0; i < countI; i++) {
 		if (x >= image_coordinates.at(i).first && x <= image_coordinates.at(i).first + cellWidth) {
@@ -445,8 +517,8 @@ void ofApp::mousePressed(int x, int y, int button) {
 }
 //--------------------------------------------------------------
 void ofApp::mouseReleased(int x, int y, int button) {
-	mouse_x = x;
-	mouse_y = y;
+	mouse_x = x - cellWidth;
+	mouse_y = y - cellHeight;
 }
 
 //--------------------------------------------------------------

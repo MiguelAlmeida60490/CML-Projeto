@@ -5,9 +5,10 @@
 #include <ofxPanel.h>
 #include <ofxGui.h>
 #include <ofxXmlSettings.h>
+class xml_algorithms;
+
 
 class ofApp : public ofBaseApp{
-
 	public:
 		void setup();
 		void update();
@@ -24,6 +25,7 @@ class ofApp : public ofBaseApp{
 		void windowResized(int w, int h);
 		void dragEvent(ofDragInfo dragInfo);
 		void gotMessage(ofMessage msg);
+		void getEdgesandTextures(xml_algorithms myObj, ofImage image);
 		void genXML(ofDirectory dir);
 		
 		ofDirectory dir;
@@ -37,7 +39,6 @@ class ofApp : public ofBaseApp{
 		ofxInputField<string> tags;
 		ofxXmlSettings xml;
 
-
 		int countV = 0, countI = 0;
 		int cellWidth, cellHeight;
 
@@ -45,7 +46,7 @@ class ofApp : public ofBaseApp{
 		vector<Coordinate> video_coordinates, image_coordinates;
 
 		ofVideoGrabber vidGrabber;
-		//ofPixels video;
+		//ofPixels video, ;
 		//ofTexture videoTexture;
 		int camWidth, camHeight;
 		bool paused, show_camera, image_resize, video_resize, mouse_moved;
@@ -62,4 +63,5 @@ class ofApp : public ofBaseApp{
 		ofxPanel gui;
 
 		ofxToggle togFullscreen;
+
 };
