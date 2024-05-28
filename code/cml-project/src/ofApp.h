@@ -26,7 +26,7 @@ class ofApp : public ofBaseApp{
 		void dragEvent(ofDragInfo dragInfo);
 		void gotMessage(ofMessage msg);
 		void getEdgesandTextures(xml_algorithms myObj, ofImage image);
-		void genXML(ofDirectory dir);
+		void genXML(ofDirectory dir, xml_algorithms myObj);
 		
 		ofDirectory dir;
 		vector<ofImage> images;

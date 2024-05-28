@@ -38,82 +38,40 @@ void ofApp::getEdgesandTextures(xml_algorithms myObj, ofImage image) {
 }
 
 //--------------------------------------------------------------
-/*void ofApp::genXML(ofDirectory dir) {
+void ofApp::genXML(ofDirectory dir, xml_algorithms myObj) {
 	cout << "Generating metadata" << endl;
-	for (int i = 0; i < dir.size(); i++) {
-		string extension = dir.getFile(i).getExtension();
-		if (extension == "mp4" || extension == "jpg") {
-			ofxXmlSettings xml;
-			if (!xml.tagExists("metadata")) {
-				xml.addTag("metadata");
-			}
-			xml.pushTag("metadata");
 
-			if (!xml.tagExists("tags")) {
-				xml.addTag("tags");
-				xml.pushTag("tags");
-				xml.popTag();
-			}
+	string metadataDir = "metadata";
+	string metadataPath = ofFilePath::join("", metadataDir);
 
-			if (!xml.tagExists("luminance")) {
-				//xml.addTag("luminance");
-				//xml.pushTag("luminance");
-				//xml.addValue("luminance", avg_l);
-				//xml.popTag();
-			}
-
-			if (!xml.tagExists("color")) {
-				//Insert on XML
-				//xml.addTag("color");
-				//xml.pushTag("color");
-				//xml.addValue("r", avg_r);
-				//xml.addValue("g", avg_g);
-				//xml.addValue("b", avg_b);
-				//xml.popTag();
-			}
-
-			if (!xml.tagExists("faces")) {
-
-			}
-
-			if (!xml.tagExists("edges")) {
-
-			}
-
-			if (!xml.tagExists("cuts")) {
-
-			}
-
-			if (!xml.tagExists("textures")) {
-
-			}
-			string fileName = ofFilePath::getBaseName(dir.getName(i));
-			xml.saveFile(fileName + ".xml");
-
-		}
+	ofDirectory metadataDirChecker(metadataPath);
+	if (!metadataDirChecker.exists()) {
+		metadataDirChecker.create(true);
 	}
-	cout << "Generated metadata successfully" << endl;
-}
-*/
 
-
-/*
-void ofApp::genXML(ofDirectory dir) {
-	//cout << "Generating metadata" << endl;
 	for (int i = 0; i < dir.size(); i++) {
 		string fileName = ofFilePath::getBaseName(dir.getName(i));
 		string extension = dir.getFile(i).getExtension();
+		string filePath = ofFilePath::join(metadataPath, fileName + ".xml");
+
+		if (ofFile::doesFileExist(filePath)) {
+			cout << "Metadata for " << fileName << " already exists. Skipping this file." << endl;
+			continue;
+		}
+
+		ofxXmlSettings xml; // Move this inside the loop to ensure a new XML object for each file
+
 		if (extension == "jpg") {
-			ofImage image = dir.getFile(i);
+			ofImage image;
+			image.load(dir.getPath(i));
 			ofPixels pixels = image.getPixels();
 			int avg_r, avg_g, avg_b, avg_l, nFaces;
 
-			//FUNCTION TO GET RGB, L AND NUMBERFACES
-			int r = 0, g = 0, b = 0, l = 0;
+			// FUNCTION TO GET RGB, L AND NUMBERFACES
+			int r = 0, g = 0, b = 0;
 			for (int x = 0; x < pixels.getWidth(); x++) {
 				for (int y = 0; y < pixels.getHeight(); y++) {
 					ofColor color = pixels.getColor(x, y);
-
 					r += color.r;
 					g += color.g;
 					b += color.b;
@@ -121,32 +79,56 @@ void ofApp::genXML(ofDirectory dir) {
 			}
 
 			int pixels_size = pixels.getWidth() * pixels.getHeight();
-
-
 			avg_r = r / pixels_size;
 			avg_g = g / pixels_size;
 			avg_b = b / pixels_size;
 			avg_l = 0.2125 * avg_r + 0.7154 * avg_g + 0.0721 * avg_b;
 
-			finder.findHaarObjects(img);
-
+			finder.findHaarObjects(image);
 			nFaces = finder.blobs.size();
 
-			//INSERTION OF THE METADATA ON THE XML FILE
-			if (!xml.tagExists(fileName)) {
-				xml.addTag(fileName);
-			}
-			xml.pushTag(fileName);
+			myObj.setFilter(image, true);
+			double* avg_vector = myObj.getAvgEdges();
+			double* dev_vector = myObj.getVarianceEdges();
 
+
+			myObj.setFilter(image, false);
+			double* avg_gabor = myObj.getAvgGabor();
+			double* dev_gabor = myObj.getVarianceGabor();
+
+
+			/*for (int j = 0; j < sizeof(avg_vector); j++) {
+				cout << std::to_string(avg_vector[j]);
+			}
+			cout << "" << endl;
+
+			for (int j = 0; j < sizeof(dev_vector); j++) {
+				cout << std::to_string(dev_vector[j]);
+			}
+			cout << "" << endl;
+
+			for (int j = 0; j < sizeof(avg_gabor); j++) {
+				cout << std::to_string(avg_gabor[j]);
+			}
+			cout << "" << endl;
+
+			for (int j = 0; j < sizeof(dev_gabor); j++) {
+				cout << std::to_string(dev_gabor[j]);
+			}
+			cout << "" << endl; */
+
+			// INSERTION OF THE METADATA ON THE XML FILE
 			if (!xml.tagExists("metadata")) {
 				xml.addTag("metadata");
 			}
 			xml.pushTag("metadata");
+
 			if (!xml.tagExists("tags")) {
 				xml.addTag("tags");
 				xml.pushTag("tags");
 				xml.popTag();
 			}
+
 			if (!xml.tagExists("color")) {
 				xml.addTag("color");
 				xml.pushTag("color");
@@ -155,59 +137,84 @@ void ofApp::genXML(ofDirectory dir) {
 				xml.addValue("b", avg_b);
 				xml.popTag();
 			}
+
 			if (!xml.tagExists("luminance")) {
 				xml.addTag("luminance");
 				xml.pushTag("luminance");
 				xml.addValue("luminance", avg_l);
 				xml.popTag();
 			}
+
 			if (!xml.tagExists("edges")) {
 				xml.addTag("edges");
 				xml.pushTag("edges");
-				//TODO
+				xml.addTag("avgEdges");
+				xml.pushTag("avgEdges");
+				for (int j = 0; j < sizeof(avg_vector); j++) {
+					xml.addValue("avg_l" + std::to_string(j + 1), avg_vector[i]);
+				}
+				xml.popTag();
+				xml.addTag("varEdges");
+				xml.pushTag("varEdges");
+				for (int j = 0; j < sizeof(dev_vector); j++) {
+					xml.addValue("dev" + std::to_string(j + 1), dev_vector[i]);
+				}
+				xml.popTag();
 				xml.popTag();
 			}
+
 			if (!xml.tagExists("textures")) {
-				xml.addTag("textures");
+				xml.addTag("textures");			
 				xml.pushTag("textures");
-				//TODO
+				xml.addTag("avgTextures");
+				xml.pushTag("avgTextures");
+				for (int j = 0; j < sizeof(avg_gabor); j++) {
+					xml.addValue("avg_l" + std::to_string(j + 1), avg_gabor[i]);
+				}
+				xml.popTag();
+				xml.addTag("varTextures");
+				xml.pushTag("varTextures");
+				for (int j = 0; j < sizeof(dev_gabor); j++) {
+					xml.addValue("dev" + std::to_string(j + 1), dev_gabor[i]);
+				}
+				xml.popTag();
 				xml.popTag();
 			}
+
 			if (!xml.tagExists("numberFaces")) {
 				xml.addTag("numberFaces");
 				xml.pushTag("numberFaces");
-				cout << nFaces << endl;
 				xml.addValue("numberOfFaces", nFaces);
 				xml.popTag();
 			}
-			xml.popTag();
-			xml.popTag();
+
+			xml.popTag(); // metadata
+			string filePath = ofFilePath::join(metadataPath, fileName + ".xml");
+			xml.saveFile(filePath);
+
 		}
 		else if (extension == "mp4") {
-			if (!xml.tagExists(fileName)) {
-				xml.addTag(fileName);
-			}
-			xml.pushTag(fileName);
-
 			if (!xml.tagExists("metadata")) {
 				xml.addTag("metadata");
 			}
 			xml.pushTag("metadata");
+
 			if (!xml.tagExists("tags")) {
 				xml.addTag("tags");
 				xml.pushTag("tags");
 				xml.popTag();
 			}
-			xml.popTag();
-			xml.popTag();
+
+			xml.popTag(); // metadata
+			xml.saveFile(filePath);
 		}
 		else {
 			cout << dir.getFile(i).getFileName() + " is not an image or a video" << endl;
 		}
 	}
-	xml.saveFile("metadata.xml");
 	cout << "Generated metadata successfully" << endl;
-}*/
+}
+
 //--------------------------------------------------------------
 void ofApp::setup() {
 	camWidth = ofGetWidth() / 1.5;  // try to grab at this size.
@@ -271,21 +278,25 @@ void ofApp::setup() {
 	}
 	ofBackground(ofColor::purple);
 
-	if (xml.loadFile("metadata.xml")) {
-		//cout << "There is a xml file already" << endl;
+	//TODO CHANGE THIS TO CHECK LENGTH OF FILES IN METADATA FOLDER INSIDE bin/data
+	/*if (xml.loadFile("metadata.xml")) {
+		cout << "There is a xml file already" << endl;
 	}
 	else {
-		//cout << "metadata.xml does not exist. Gonna generate it" << endl;
-		//genXML(dir);
-	}
+		cout << "metadata.xml does not exist. Gonna generate it" << endl;
+		genXML(dir);
+	}*/
 
 	xml_algorithms myObj;
 
+	genXML(dir, myObj);
+
 	for (ofImage img : images) {
 		finder.findHaarObjects(img);
+		cout << finder.blobs.size() << endl;
 		int nFaces = finder.blobs.size();
 		int* img_colors = myObj.getColor(img);
-				int img_lum = myObj.getLuminance();
+		int img_lum = myObj.getLuminance();
 
 		/*
 		cout << "IMAGE COLORS: ";
