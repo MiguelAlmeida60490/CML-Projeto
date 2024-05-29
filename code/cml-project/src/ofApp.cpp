@@ -37,9 +37,55 @@ void ofApp::getEdgesandTextures(xml_algorithms myObj, ofImage image) {
 	cout << endl;*/
 }
 
+void ofApp::getVideoFirstFrame(ofDirectory dir) {
+	string metadataDir = "videosFirstFrame";
+	string metadataPath = ofFilePath::join("", metadataDir);
+
+	ofDirectory metadataDirChecker(metadataPath);
+	if (!metadataDirChecker.exists()) {
+		metadataDirChecker.create(true);
+	}
+
+	for (int i = 0; i < dir.size(); i++) {
+		string fileName = ofFilePath::getBaseName(dir.getName(i));
+		string extension = dir.getFile(i).getExtension();
+		string filePath = dir.getPath(i);
+		string savePath = ofFilePath::join(metadataPath, fileName + ".jpg");
+
+		if (extension == "mp4") {
+			if (ofFile::doesFileExist(savePath)) {
+				cout << "First frame of this video already exists" << endl;
+				continue;
+			}
+			else {
+				ofVideoPlayer video;
+				video.load(filePath);
+
+				video.play();
+				video.setPaused(true);
+
+				// Ensure the video is loaded and the first frame is available
+				for (int j = 0; j < 5; j++) { // Try a few times to make sure the frame is updated
+					video.update();
+					if (video.isFrameNew()) {
+						ofImage firstFrame;
+						firstFrame.setFromPixels(video.getPixels());
+						firstFrame.save(savePath);
+						cout << "Created new first frame for video " + fileName << endl;
+						break;
+					}
+					ofSleepMillis(100); // Wait for a short period to allow the video player to update
+				}
+			}
+		}
+	}
+}
+
 //--------------------------------------------------------------
 void ofApp::genXML(ofDirectory dir, xml_algorithms myObj) {
 	cout << "Generating metadata" << endl;
+
+	getVideoFirstFrame(dir);
 
 	string metadataDir = "metadata";
 	string metadataPath = ofFilePath::join("", metadataDir);
@@ -96,28 +142,6 @@ void ofApp::genXML(ofDirectory dir, xml_algorithms myObj) {
 			double* avg_gabor = myObj.getAvgGabor();
 			double* dev_gabor = myObj.getVarianceGabor();
 
-
-			/*for (int j = 0; j < sizeof(avg_vector); j++) {
-				cout << std::to_string(avg_vector[j]);
-			}
-			cout << "" << endl;
-
-			for (int j = 0; j < sizeof(dev_vector); j++) {
-				cout << std::to_string(dev_vector[j]);
-			}
-			cout << "" << endl;
-
-			for (int j = 0; j < sizeof(avg_gabor); j++) {
-				cout << std::to_string(avg_gabor[j]);
-			}
-			cout << "" << endl;
-
-			for (int j = 0; j < sizeof(dev_gabor); j++) {
-				cout << std::to_string(dev_gabor[j]);
-			}
-			cout << "" << endl; */
-
-			// INSERTION OF THE METADATA ON THE XML FILE
 			if (!xml.tagExists("metadata")) {
 				xml.addTag("metadata");
 			}
@@ -164,7 +188,7 @@ void ofApp::genXML(ofDirectory dir, xml_algorithms myObj) {
 			}
 
 			if (!xml.tagExists("textures")) {
-				xml.addTag("textures");			
+				xml.addTag("textures");
 				xml.pushTag("textures");
 				xml.addTag("avgTextures");
 				xml.pushTag("avgTextures");
@@ -193,7 +217,66 @@ void ofApp::genXML(ofDirectory dir, xml_algorithms myObj) {
 			xml.saveFile(filePath);
 
 		}
-		else if (extension == "mp4") {
+		else {
+			cout << dir.getFile(i).getFileName() + " is not an image" << endl;
+		}
+	}
+	string firstFrameDirName = "videosFirstFrame";
+	ofDirectory firstFramesDir(firstFrameDirName);
+	if (!firstFramesDir.exists()) {
+		cout << "First frame directory does not exist." << endl;
+		return;
+	}
+	firstFramesDir.allowExt("jpg");
+	firstFramesDir.listDir();
+
+	for (int i = 0; i < firstFramesDir.size(); i++) {
+		string fileName = ofFilePath::getBaseName(firstFramesDir.getName(i));
+		string extension = firstFramesDir.getFile(i).getExtension();
+		string filePath = ofFilePath::join(metadataPath, fileName + ".xml");
+
+		if (ofFile::doesFileExist(filePath)) {
+			cout << "Metadata for " << fileName << " already exists. Skipping this file." << endl;
+			continue;
+		}
+
+		ofxXmlSettings xml; // Move this inside the loop to ensure a new XML object for each file
+
+		if (extension == "jpg") {
+			ofImage image;
+			image.load(firstFramesDir.getPath(i));
+			ofPixels pixels = image.getPixels();
+			int avg_r, avg_g, avg_b, avg_l, nFaces;
+
+			// FUNCTION TO GET RGB, L AND NUMBERFACES
+			int r = 0, g = 0, b = 0;
+			for (int x = 0; x < pixels.getWidth(); x++) {
+				for (int y = 0; y < pixels.getHeight(); y++) {
+					ofColor color = pixels.getColor(x, y);
+					r += color.r;
+					g += color.g;
+					b += color.b;
+				}
+			}
+
+			int pixels_size = pixels.getWidth() * pixels.getHeight();
+			avg_r = r / pixels_size;
+			avg_g = g / pixels_size;
+			avg_b = b / pixels_size;
+			avg_l = 0.2125 * avg_r + 0.7154 * avg_g + 0.0721 * avg_b;
+
+			finder.findHaarObjects(image);
+			nFaces = finder.blobs.size();
+
+			myObj.setFilter(image, true);
+			double* avg_vector = myObj.getAvgEdges();
+			double* dev_vector = myObj.getVarianceEdges();
+
+
+			myObj.setFilter(image, false);
+			double* avg_gabor = myObj.getAvgGabor();
+			double* dev_gabor = myObj.getVarianceGabor();
+
 			if (!xml.tagExists("metadata")) {
 				xml.addTag("metadata");
 			}
@@ -205,11 +288,72 @@ void ofApp::genXML(ofDirectory dir, xml_algorithms myObj) {
 				xml.popTag();
 			}
 
+			if (!xml.tagExists("color")) {
+				xml.addTag("color");
+				xml.pushTag("color");
+				xml.addValue("r", avg_r);
+				xml.addValue("g", avg_g);
+				xml.addValue("b", avg_b);
+				xml.popTag();
+			}
+
+			if (!xml.tagExists("luminance")) {
+				xml.addTag("luminance");
+				xml.pushTag("luminance");
+				xml.addValue("luminance", avg_l);
+				xml.popTag();
+			}
+
+			if (!xml.tagExists("edges")) {
+				xml.addTag("edges");
+				xml.pushTag("edges");
+				xml.addTag("avgEdges");
+				xml.pushTag("avgEdges");
+				for (int j = 0; j < sizeof(avg_vector); j++) {
+					xml.addValue("avg_l" + std::to_string(j + 1), avg_vector[i]);
+				}
+				xml.popTag();
+				xml.addTag("varEdges");
+				xml.pushTag("varEdges");
+				for (int j = 0; j < sizeof(dev_vector); j++) {
+					xml.addValue("dev" + std::to_string(j + 1), dev_vector[i]);
+				}
+				xml.popTag();
+				xml.popTag();
+			}
+
+			if (!xml.tagExists("textures")) {
+				xml.addTag("textures");
+				xml.pushTag("textures");
+				xml.addTag("avgTextures");
+				xml.pushTag("avgTextures");
+				for (int j = 0; j < sizeof(avg_gabor); j++) {
+					xml.addValue("avg_l" + std::to_string(j + 1), avg_gabor[i]);
+				}
+				xml.popTag();
+				xml.addTag("varTextures");
+				xml.pushTag("varTextures");
+				for (int j = 0; j < sizeof(dev_gabor); j++) {
+					xml.addValue("dev" + std::to_string(j + 1), dev_gabor[i]);
+				}
+				xml.popTag();
+				xml.popTag();
+			}
+
+			if (!xml.tagExists("numberFaces")) {
+				xml.addTag("numberFaces");
+				xml.pushTag("numberFaces");
+				xml.addValue("numberOfFaces", nFaces);
+				xml.popTag();
+			}
+
 			xml.popTag(); // metadata
+			string filePath = ofFilePath::join(metadataPath, fileName + ".xml");
 			xml.saveFile(filePath);
+
 		}
 		else {
-			cout << dir.getFile(i).getFileName() + " is not an image or a video" << endl;
+			cout << firstFramesDir.getFile(i).getFileName() + " is not an image" << endl;
 		}
 	}
 	cout << "Generated metadata successfully" << endl;

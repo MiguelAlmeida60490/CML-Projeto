@@ -27,6 +27,7 @@ class ofApp : public ofBaseApp{
 		void gotMessage(ofMessage msg);
 		void getEdgesandTextures(xml_algorithms myObj, ofImage image);
 		void genXML(ofDirectory dir, xml_algorithms myObj);
+		void getVideoFirstFrame(ofDirectory dir);
 		
 		ofDirectory dir;
 		vector<ofImage> images;
