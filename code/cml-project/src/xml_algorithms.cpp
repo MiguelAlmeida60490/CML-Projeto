@@ -51,6 +51,7 @@ void xml_algorithms::setFilter(ofImage img, bool edgesFilter) {
 	imageOf3.allocate(img.getWidth(), img.getHeight(), OF_IMAGE_GRAYSCALE);
 	imageOf4.allocate(img.getWidth(), img.getHeight(), OF_IMAGE_GRAYSCALE);
 	imageOf5.allocate(img.getWidth(), img.getHeight(), OF_IMAGE_GRAYSCALE);
+	imageOf6.allocate(img.getWidth(), img.getHeight(), OF_IMAGE_GRAYSCALE);
 
 
 	mat = toCv(img);
@@ -270,18 +271,18 @@ void xml_algorithms::setVarianceFilter(ofImage* images[], bool edgesFilter) {
 
 }
 
-double* xml_algorithms::getVarianceEdges() {
+int* xml_algorithms::getVarianceEdges() {
 	return devEdges;
 }
 
-double* xml_algorithms::getAvgEdges() {
+int* xml_algorithms::getAvgEdges() {
 	return avgEdges;
 }
 
-double* xml_algorithms::getVarianceGabor() {
+int* xml_algorithms::getVarianceGabor() {
 	return devGabor;
 }
 
-double* xml_algorithms::getAvgGabor() {
+int* xml_algorithms::getAvgGabor() {
 	return avgGabor;
 }
