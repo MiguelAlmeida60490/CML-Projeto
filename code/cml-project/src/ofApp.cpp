@@ -122,28 +122,26 @@ void ofApp::addTags(xml_algorithms myObj, ofDirectory dir) {
 
 
 
-void ofApp::getVideoFirstFrame(ofDirectory dir) {
-	string metadataDir = "videosFirstFrame";
-	string metadataPath = ofFilePath::join("", metadataDir);
+void ofApp::getVideoFirstFrame() {
+	string metadataPath = "videosFirstFrame";
 
 	ofDirectory metadataDirChecker(metadataPath);
 	if (!metadataDirChecker.exists()) {
 		metadataDirChecker.create(true);
 	}
 
-	for (int i = 0; i < dir.size(); i++) {
-		string fileName = ofFilePath::getBaseName(dir.getName(i));
-		string extension = dir.getFile(i).getExtension();
-		string filePath = dir.getPath(i);
+	for (int i = 0; i < videos.size(); i++) {
+		string fileName = "VideoFrame" + to_string(i);
+		string filePath = videos.at(i).getMoviePath();
 		string savePath = ofFilePath::join(metadataPath, fileName + ".jpg");
 
-		if (extension == "mp4") {
 			if (ofFile::doesFileExist(savePath)) {
 				cout << "First frame of this video already exists" << endl;
 				continue;
 			}
 			else {
 				ofVideoPlayer video;
+
 				video.load(filePath);
 
 				video.play();
@@ -162,7 +160,6 @@ void ofApp::getVideoFirstFrame(ofDirectory dir) {
 					ofSleepMillis(100); // Wait for a short period to allow the video player to update
 				}
 			}
-		}
 	}
 }
 
@@ -170,7 +167,7 @@ void ofApp::getVideoFirstFrame(ofDirectory dir) {
 void ofApp::genXML(ofDirectory dir, xml_algorithms myObj) {
 	cout << "Generating metadata" << endl;
 
-	getVideoFirstFrame(dir);
+	getVideoFirstFrame();
 
 	metadataDir = "metadata";
 	metadataPath = ofFilePath::join("", metadataDir);
@@ -284,6 +281,8 @@ void ofApp::update() {
 		}
 		vidGrabber.update();
 	}
+		for (ofVideoPlayer v : videos)
+		v.update();
 
 }
 
@@ -318,7 +317,6 @@ void ofApp::draw() {
 			else if (currentV < countV) {
 				if (pos_resize_video != currentV) {
 					videos[currentV].draw(x, y, cellWidth, cellHeight);//posicao no ecra primeiras 2, tamanho segundas 2
-					videos[currentV].update();
 					video_coordinates.push_back(pair(x, y));
 				}
 				else {
@@ -364,23 +362,19 @@ void ofApp::draw() {
 			if (x >= 815 && y >= 550 && pos_resize_video == i) {
 				videos[pos_resize_video].draw(x - 100, y - 200, cellWidth + 100, cellWidth + 100);;
 				ofSetColor(ofColor::gray);
-				videos[pos_resize_video].update();
 			}
 			else if (x >= 815 && pos_resize_video == i) {
 				videos[pos_resize_video].draw(x - 100, y, cellWidth + 100, cellWidth + 100);
 				ofSetColor(ofColor::gray);
-				videos[pos_resize_video].update();
 			}
 			else if (y >= 550 && pos_resize_video == i) {
 				videos[pos_resize_video].draw(x, y - 200, cellWidth + 100, cellWidth + 100);
 				ofSetColor(ofColor::gray);
-				videos[pos_resize_video].update();
 			}
 			else {
 				if (pos_resize_video == i) {
 					videos[pos_resize_video].draw(x, y, cellWidth + 100, cellWidth + 100);
 					ofSetColor(ofColor::gray);
-					videos[pos_resize_video].update();
 				}
 			}
 		}
@@ -389,7 +383,6 @@ void ofApp::draw() {
 	if (pos_resize_video != -1 && mouse_moved) {
 		ofSetColor(ofColor::white);
 		videos[pos_resize_video].draw(mouse_x, mouse_y, cellWidth + 100, cellWidth + 100);
-		videos[pos_resize_video].update();
 		ofSetColor(ofColor::gray);
 	}
 

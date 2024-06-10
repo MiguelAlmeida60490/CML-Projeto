@@ -25,9 +25,7 @@ public:
 	void windowResized(int w, int h);
 	void dragEvent(ofDragInfo dragInfo);
 	void gotMessage(ofMessage msg);
-	void genXML(ofDirectory dir, xml_algorithms myObj);
-	void getVideoFirstFrame(ofDirectory dir);
-	void addTags(xml_algorithms myObj, ofDirectory dir);
+	
 
 	ofDirectory dir;
 	vector<ofImage> images;
@@ -66,5 +64,9 @@ public:
 	ofxToggle togFullscreen;
 
 	string metadataDir, metadataPath;
+private:
+	void addTags(xml_algorithms myObj, ofDirectory dir);
+	void getVideoFirstFrame();
+	void genXML(ofDirectory dir, xml_algorithms myObj);
 
 };
