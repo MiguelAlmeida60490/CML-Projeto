@@ -7,6 +7,18 @@
 #include <ofxXmlSettings.h>
 class xml_algorithms;
 
+struct ImageWithPath {
+	ofImage image;
+	string path;
+	string xmlPath;
+};
+
+struct VideoWithPath {
+	ofVideoPlayer video;
+	string path;
+	string xmlPath;
+};
+
 
 class ofApp : public ofBaseApp {
 public:
@@ -25,20 +37,30 @@ public:
 	void windowResized(int w, int h);
 	void dragEvent(ofDragInfo dragInfo);
 	void gotMessage(ofMessage msg);
-	
+	void toggleFullscreen(bool & isFullscreen);
+	void loadMedia(string filePath);
+	void updateGUIFromXML(ofxXmlSettings &xml);
+	void addTagButtonPressed();
 
 	ofDirectory dir;
-	vector<ofImage> images;
-	vector<ofVideoPlayer> videos;
+	vector<ImageWithPath> images;
+	vector<VideoWithPath> videos;
 
+	ofxPanel gui;
+	ofxToggle togFullscreen;
 	ofxColorSlider color;
 	ofxFloatSlider luminance;
 	ofxLabel screenSize;
 	ofxIntField numFaces;
-	ofxInputField<string> tags;
+	ofxLabel tags;
+	ofxInputField<string> newTagInput;
+	ofxButton addTagButton;
+	bool isFullscreen;
+
 	ofxXmlSettings xml;
 
 	int countV = 0, countI = 0;
+	int imageIndex = 0, videoIndex = 0;
 	int cellWidth, cellHeight;
 
 	typedef pair<float, float> Coordinate;
@@ -51,6 +73,8 @@ public:
 	bool paused, show_camera, image_resize, video_resize, mouse_moved;
 	int mouse_x, mouse_y;
 	int pos_resize_image, pos_resize_video;
+	int selected_media_index;
+	string selected_media_type;
 
 	static const int BLANK_SPACE = 32;
 	static const int ROWS = 7;
@@ -58,10 +82,6 @@ public:
 	static const int SPACING = 10;
 	ofxCvHaarFinder finder;
 	ofImage img;
-
-	ofxPanel gui;
-
-	ofxToggle togFullscreen;
 
 	string metadataDir, metadataPath;
 private:

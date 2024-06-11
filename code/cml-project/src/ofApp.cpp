@@ -2,8 +2,6 @@
 #include "ofFileUtils.h"
 #include "xml_algorithms.h"
 
-
-
 void ofApp::addTags(xml_algorithms myObj, ofDirectory dir) {
 	for (int i = 0; i < dir.size(); i++) {
 		string fileName = ofFilePath::getBaseName(dir.getName(i));
@@ -120,8 +118,6 @@ void ofApp::addTags(xml_algorithms myObj, ofDirectory dir) {
 	}
 }
 
-
-
 void ofApp::getVideoFirstFrame() {
 	string metadataPath = "videosFirstFrame";
 
@@ -131,37 +127,37 @@ void ofApp::getVideoFirstFrame() {
 	}
 
 	for (int i = 0; i < videos.size(); i++) {
-		string fileName = "VideoFrame" + to_string(i);
-		string filePath = videos.at(i).getMoviePath();
+		string filePath = videos.at(i).video.getMoviePath();
+		string fileName = ofFilePath::getBaseName(filePath); // Get base name of the video file without extension
 		string savePath = ofFilePath::join(metadataPath, fileName + ".jpg");
 
-			if (ofFile::doesFileExist(savePath)) {
-				cout << "First frame of this video already exists" << endl;
-				continue;
-			}
-			else {
-				ofVideoPlayer video;
+		if (ofFile::doesFileExist(savePath)) {
+			cout << "First frame of this video already exists" << endl;
+			continue;
+		}
+		else {
+			ofVideoPlayer video;
 
-				video.load(filePath);
+			video.load(filePath);
+			video.play();
+			video.setPaused(true);
 
-				video.play();
-				video.setPaused(true);
-
-				// Ensure the video is loaded and the first frame is available
-				for (int j = 0; j < 5; j++) { // Try a few times to make sure the frame is updated
-					video.update();
-					if (video.isFrameNew()) {
-						ofImage firstFrame;
-						firstFrame.setFromPixels(video.getPixels());
-						firstFrame.save(savePath);
-						cout << "Created new first frame for video " + fileName << endl;
-						break;
-					}
-					ofSleepMillis(100); // Wait for a short period to allow the video player to update
+			// Ensure the video is loaded and the first frame is available
+			for (int j = 0; j < 5; j++) { // Try a few times to make sure the frame is updated
+				video.update();
+				if (video.isFrameNew()) {
+					ofImage firstFrame;
+					firstFrame.setFromPixels(video.getPixels());
+					firstFrame.save(savePath);
+					cout << "Created new first frame for video " + fileName << endl;
+					break;
 				}
+				ofSleepMillis(100); // Wait for a short period to allow the video player to update
 			}
+		}
 	}
 }
+
 
 //--------------------------------------------------------------
 void ofApp::genXML(ofDirectory dir, xml_algorithms myObj) {
@@ -193,10 +189,72 @@ void ofApp::genXML(ofDirectory dir, xml_algorithms myObj) {
 	cout << "Generated metadata successfully" << endl;
 }
 
+void ofApp::addTagButtonPressed() {
+	string newTag = newTagInput;
+
+	// Assuming you have the file path of the current media's XML file
+	string folderXml = ofFilePath::join("", "metadata");
+	string fileName;
+	string xmlPath;
+
+	if (pos_resize_image != -1) {
+		fileName = ofFilePath::getBaseName(dir.getName(pos_resize_image));
+		xmlPath = ofFilePath::join(folderXml, fileName + ".xml");
+	}
+	else if (pos_resize_video != -1) {
+		fileName = ofFilePath::getBaseName(dir.getName(pos_resize_video));
+		xmlPath = ofFilePath::join(folderXml, fileName + ".xml");
+	}
+	else {
+		cout << "No Image or Video Selected" << endl;
+		return;
+	}
+
+	if (ofFile::doesFileExist(xmlPath)) {
+		if (xml.loadFile(xmlPath)) {
+			if (!xml.tagExists("metadata")) {
+				xml.addTag("metadata");
+			}
+			xml.pushTag("metadata");
+
+			if (!xml.tagExists("tags")) {
+				xml.addTag("tags");
+			}
+			xml.pushTag("tags");
+
+			int numTags = xml.getNumTags("tag");
+			if (numTags == 0) {
+				xml.addValue("tag", newTag); // Add first tag without index
+			}
+			else {
+				xml.addValue("tag", newTag); // Add subsequent tags
+			}
+
+			xml.popTag(); // tags
+			xml.popTag(); // metadata
+
+			xml.saveFile(xmlPath);
+
+			cout << "Tag added: " << newTag << endl;
+			newTagInput = "";
+		}
+		else {
+			cout << "Failed to load XML file: " << xmlPath << endl;
+		}
+	}
+	else {
+		cout << "XML file does not exist: " << xmlPath << endl;
+	}
+}
+
 //--------------------------------------------------------------
 void ofApp::setup() {
 	camWidth = ofGetWidth() / 1.5;  // try to grab at this size.
 	camHeight = ofGetHeight() / 1.5;
+
+	isFullscreen = false;
+
+	finder.setup("Zhaarcascade_frontalface_default.xml");
 
 	//get back a list of devices.
 	vector<ofVideoDevice> devices = vidGrabber.listDevices();
@@ -223,55 +281,106 @@ void ofApp::setup() {
 
 	gui.setup();
 
-	//gui.setPosition(ofGetWidth()/2 + 100,ofGetHeight()-100);
 	gui.add(togFullscreen.setup("Fullscreen", false));
 	gui.add(tags.setup("Tags", ""));
-	gui.add(luminance.setup("Luminance", 50, 0, 100));
+	gui.add(newTagInput.setup("New Tag", ""));
+	gui.add(addTagButton.setup("Add Tag"));
+	gui.add(luminance.setup("Luminance", 50, 0, 255));
 	gui.add(color.setup("Color", ofColor(100, 100, 140), ofColor(0, 0), ofColor(255, 255)));
 	gui.add(numFaces.setup("Number of Faces", 0, 0, 100));
 	gui.add(screenSize.setup("Screen Size", ofToString(ofGetWidth()) + "x" + ofToString(ofGetHeight())));
 
-	for (int i = 0; i < (int)dir.size(); i++) {
-		string extension = dir.getFile(i).getExtension();
+	togFullscreen.addListener(this, &ofApp::toggleFullscreen);
+	addTagButton.addListener(this, &ofApp::addTagButtonPressed);
 
+	for (int i = 0; i < dir.size(); i++) {
+		string extension = dir.getFile(i).getExtension();
 		if (extension == "mp4") {
 			countV++;
 		}
 		else if (extension == "jpg") {
 			countI++;
 		}
-		else {
-			finder.setup("Zhaarcascade_frontalface_default.xml");
-		}
-
 	}
-	images.assign(countI, ofImage());
-	videos.assign(countV, ofVideoPlayer());
 
-	for (int pos = 0; pos < dir.size();pos++) {
-		if (dir.getFile(pos).getExtension() == "mp4")
-			videos[pos - countI].load(dir.getPath(pos));
-		else if (dir.getFile(pos).getExtension() == "jpg")
-			images[pos].load(dir.getPath(pos));
+	images.assign(countI, ImageWithPath());
+	videos.assign(countV, VideoWithPath());
+
+	for (int pos = 0; pos < dir.size(); pos++) {
+		string extension = dir.getFile(pos).getExtension();
+		string path = dir.getPath(pos);
+
+		string folderXml = ofFilePath::join("", "metadata");
+
+		string fileName = ofFilePath::getBaseName(dir.getName(pos));
+		string xmlPath = ofFilePath::join(folderXml, fileName + ".xml");
+
+		if (extension == "mp4") {
+			videos[videoIndex].video.load(path);
+			videos[videoIndex].path = path;
+			videos[videoIndex].xmlPath = xmlPath;
+			videoIndex++;
+		}
+		else if (extension == "jpg") {
+			images[imageIndex].image.load(path);
+			images[imageIndex].path = path;
+			images[imageIndex].xmlPath = xmlPath;
+			imageIndex++;
+		}
 	}
 	ofBackground(ofColor::purple);
-
-	//TODO CHANGE THIS TO CHECK LENGTH OF FILES IN METADATA FOLDER INSIDE bin/data
-	/*if (xml.loadFile("metadata.xml")) {
-		cout << "There is a xml file already" << endl;
-	}
-	else {
-		cout << "metadata.xml does not exist. Gonna generate it" << endl;
-		genXML(dir);
-	}*/
 
 	xml_algorithms myObj;
 
 	genXML(dir, myObj);
 }
 
+void ofApp::loadMedia(string filePath) {
+	if (xml.loadFile(filePath)) {
+		updateGUIFromXML(xml);
+	}
+	else {
+		ofLogError() << "Failed to load XML file: " << filePath;
+	}
+}
+
+void ofApp::updateGUIFromXML(ofxXmlSettings &xml) {
+	// Tags
+	int numTags = xml.getNumTags("metadata:tags");
+	cout << numTags << endl;
+	string allTags = "";
+	for (int i = 0; i < numTags; i++) {
+		if (i > 0) {
+			allTags += ", ";
+		}
+		allTags += xml.getValue("metadata:tags:tag[" + ofToString(i) + "]", "");
+	}
+	tags.setup("Tags", allTags);  // Update the tags label
+
+	//Color
+	int r = xml.getValue("metadata:color:r", 0);
+	int g = xml.getValue("metadata:color:g", 0);
+	int b = xml.getValue("metadata:color:b", 0);
+	color = ofColor(r, g, b);
+
+	//Luminance
+	luminance = xml.getValue("metadata:luminance:luminance", 0.5);
+
+	//Edges
+
+
+	//Textures
+
+	//NumberFaces
+	numFaces = xml.getValue("metadata:numberFaces:numberOfFaces", 0);
+}
+
 //--------------------------------------------------------------
 void ofApp::update() {
+	if (isFullscreen) {
+		
+	}
+
 	if (show_camera == true) {
 		if (vidGrabber.isFrameNew()) {
 			ofPixels& pixels = vidGrabber.getPixels();
@@ -281,8 +390,9 @@ void ofApp::update() {
 		}
 		vidGrabber.update();
 	}
-		for (ofVideoPlayer v : videos)
-		v.update();
+	for (int i = 0; i < videos.size(); i++) {
+		videos[i].video.update();
+	}
 
 }
 
@@ -306,21 +416,21 @@ void ofApp::draw() {
 
 			if (currentI < countI) {
 				if (pos_resize_image != currentI) {
-					images[currentI].draw(x, y, cellWidth, cellHeight);//posicao no ecra primeiras 2, tamanho segundas 2
+					images[currentI].image.draw(x, y, cellWidth, cellHeight);//posicao no ecra primeiras 2, tamanho segundas 2
 					image_coordinates.push_back(pair(x, y));
 				}
 				else {
-					images[currentI].bind();
+					images[currentI].image.bind();
 				}
 				currentI++;
 			}
 			else if (currentV < countV) {
 				if (pos_resize_video != currentV) {
-					videos[currentV].draw(x, y, cellWidth, cellHeight);//posicao no ecra primeiras 2, tamanho segundas 2
+					videos[currentV].video.draw(x, y, cellWidth, cellHeight);//posicao no ecra primeiras 2, tamanho segundas 2
 					video_coordinates.push_back(pair(x, y));
 				}
 				else {
-					videos[currentV].bind();
+					videos[currentV].video.bind();
 				}
 				currentV++;
 			}
@@ -334,19 +444,19 @@ void ofApp::draw() {
 			int y = image_coordinates[i].second;
 
 			ofSetColor(ofColor::white);
-			images[pos_resize_image].resize(cellWidth + 100, cellWidth + 100);//posicao no ecra primeiras 2, tamanho segundas 2
+			images[pos_resize_image].image.resize(cellWidth + 100, cellWidth + 100);//posicao no ecra primeiras 2, tamanho segundas 2
 			if (x >= 815 && y >= 550 && pos_resize_image == i) {
-				images[pos_resize_image].draw(image_coordinates.at(pos_resize_image).first - 100, image_coordinates.at(pos_resize_image).second - 200);
+				images[pos_resize_image].image.draw(image_coordinates.at(pos_resize_image).first - 100, image_coordinates.at(pos_resize_image).second - 200);
 			}
 			else if (x >= 815 && pos_resize_image == i) {
-				images[pos_resize_image].draw(image_coordinates.at(pos_resize_image).first - 100, image_coordinates.at(pos_resize_image).second);
+				images[pos_resize_image].image.draw(image_coordinates.at(pos_resize_image).first - 100, image_coordinates.at(pos_resize_image).second);
 			}
 			else if (y >= 550 && pos_resize_image == i) {
-				images[pos_resize_image].draw(image_coordinates.at(pos_resize_image).first, image_coordinates.at(pos_resize_image).second - 200);
+				images[pos_resize_image].image.draw(image_coordinates.at(pos_resize_image).first, image_coordinates.at(pos_resize_image).second - 200);
 			}
 			else {
 				if (pos_resize_image == i) {
-					images[pos_resize_image].draw(image_coordinates.at(pos_resize_image).first, image_coordinates.at(pos_resize_image).second);
+					images[pos_resize_image].image.draw(image_coordinates.at(pos_resize_image).first, image_coordinates.at(pos_resize_image).second);
 				}
 			}
 			ofSetColor(ofColor::gray);
@@ -360,20 +470,20 @@ void ofApp::draw() {
 			int y = video_coordinates[i].second;
 			ofSetColor(ofColor::white);
 			if (x >= 815 && y >= 550 && pos_resize_video == i) {
-				videos[pos_resize_video].draw(x - 100, y - 200, cellWidth + 100, cellWidth + 100);;
+				videos[pos_resize_video].video.draw(x - 100, y - 200, cellWidth + 100, cellWidth + 100);;
 				ofSetColor(ofColor::gray);
 			}
 			else if (x >= 815 && pos_resize_video == i) {
-				videos[pos_resize_video].draw(x - 100, y, cellWidth + 100, cellWidth + 100);
+				videos[pos_resize_video].video.draw(x - 100, y, cellWidth + 100, cellWidth + 100);
 				ofSetColor(ofColor::gray);
 			}
 			else if (y >= 550 && pos_resize_video == i) {
-				videos[pos_resize_video].draw(x, y - 200, cellWidth + 100, cellWidth + 100);
+				videos[pos_resize_video].video.draw(x, y - 200, cellWidth + 100, cellWidth + 100);
 				ofSetColor(ofColor::gray);
 			}
 			else {
 				if (pos_resize_video == i) {
-					videos[pos_resize_video].draw(x, y, cellWidth + 100, cellWidth + 100);
+					videos[pos_resize_video].video.draw(x, y, cellWidth + 100, cellWidth + 100);
 					ofSetColor(ofColor::gray);
 				}
 			}
@@ -382,15 +492,15 @@ void ofApp::draw() {
 
 	if (pos_resize_video != -1 && mouse_moved) {
 		ofSetColor(ofColor::white);
-		videos[pos_resize_video].draw(mouse_x, mouse_y, cellWidth + 100, cellWidth + 100);
+		videos[pos_resize_video].video.draw(mouse_x, mouse_y, cellWidth + 100, cellWidth + 100);
 		ofSetColor(ofColor::gray);
 	}
 
 
 	if (pos_resize_image != -1 && mouse_moved) {
 		ofSetColor(ofColor::white);
-		images[pos_resize_image].resize(cellWidth + 100, cellWidth + 100);//posicao no ecra primeiras 2, tamanho segundas 2
-		images[pos_resize_image].draw(mouse_x, mouse_y);
+		images[pos_resize_image].image.resize(cellWidth + 100, cellWidth + 100);//posicao no ecra primeiras 2, tamanho segundas 2
+		images[pos_resize_image].image.draw(mouse_x, mouse_y);
 		ofSetColor(ofColor::gray);
 	}
 
@@ -411,7 +521,7 @@ void ofApp::keyPressed(int key) {
 	case BLANK_SPACE:
 		if (pos_resize_video != -1) {
 			paused = !paused;
-			videos[pos_resize_video].setPaused(paused);
+			videos[pos_resize_video].video.setPaused(paused);
 		}
 		break;
 	case 99: //c
@@ -419,7 +529,7 @@ void ofApp::keyPressed(int key) {
 		break;
 	case 112://p -> play video
 		if (pos_resize_video != -1) {
-			videos[pos_resize_video].play();
+			videos[pos_resize_video].video.play();
 			paused = false;
 		}
 		break;
@@ -477,6 +587,20 @@ void ofApp::mousePressed(int x, int y, int button) {
 			}
 		}
 	}
+	
+	if (pos_resize_video != -1 && ((selected_media_index != pos_resize_video) || (selected_media_index == pos_resize_video && selected_media_type != "video"))) {
+		loadMedia(videos[pos_resize_video].xmlPath);
+		selected_media_index = pos_resize_video;
+		selected_media_type = "video";
+	}
+	else if(pos_resize_image != -1 && ((selected_media_index != pos_resize_image) || (selected_media_index == pos_resize_image && selected_media_type != "image"))) {
+		loadMedia(images[pos_resize_image].xmlPath);
+		selected_media_index = pos_resize_image;
+		selected_media_type = "image";
+	}
+	else {
+		cout << "No media to load" << endl;
+	}
 }
 //--------------------------------------------------------------
 void ofApp::mouseReleased(int x, int y, int button) {
@@ -506,4 +630,15 @@ void ofApp::gotMessage(ofMessage msg) {
 //--------------------------------------------------------------
 void ofApp::dragEvent(ofDragInfo dragInfo) {
 
+}
+
+void ofApp::toggleFullscreen(bool& isFullscreen) {
+	if (isFullscreen) {
+		ofSetFullscreen(true);
+		ofSetWindowShape(1920, 1080);
+	}
+	else {
+		ofSetFullscreen(false);
+		ofSetWindowShape(1024, 768);
+	}
 }
