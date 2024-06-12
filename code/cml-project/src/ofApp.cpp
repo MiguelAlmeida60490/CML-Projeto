@@ -32,7 +32,6 @@ void ofApp::addTags(xml_algorithms myObj, ofDirectory dir) {
 			int* avg_vector = myObj.getAvgEdges();
 			int* dev_vector = myObj.getVarianceEdges();
 
-
 			myObj.setFilter(image, false);
 			int* avg_gabor = myObj.getAvgGabor();
 			int* dev_gabor = myObj.getVarianceGabor();
@@ -302,8 +301,20 @@ void ofApp::setup() {
 	gui.add(varText.setup("Variant Texture", ""));
 	gui.add(screenSize.setup("Screen Size", ofToString(ofGetWidth()) + "x" + ofToString(ofGetHeight())));
 
+	int guiX = 10;
+	int guiY = TAB_BAR_HEIGHT + 10; // Adjust Y position for the GUI to be below the tabs
+	gui.setPosition(guiX, guiY);
+
 	togFullscreen.addListener(this, &ofApp::toggleFullscreen);
 	addTagButton.addListener(this, &ofApp::addTagButtonPressed);
+
+	//Tab
+	tabTags.setup("Tags");
+	tabLuminance.setup("Luminance");
+	tabColor.setup("Color");
+	tabFaceCount.setup("Face Count");
+	tabEdgeDistribution.setup("Edge Distribution");
+	tabTexture.setup("Texture");
 
 	for (int i = 0; i < dir.size(); i++) {
 		string extension = dir.getFile(i).getExtension();
@@ -429,34 +440,37 @@ void ofApp::update() {
 
 //--------------------------------------------------------------
 void ofApp::draw() {
-	cellWidth = (ofGetWidth() - (COLS + 1) * SPACING) / COLS;
-	cellHeight = (ofGetHeight() - (ROWS + 1) * SPACING) / ROWS;
+	// Draw the tabs first
+	drawTabs();
+
+	// Adjust the width and height calculation to account for the tab bar height and GUI width
+	cellWidth = (ofGetWidth() - GUI_WIDTH - (COLS + 1) * SPACING) / COLS;
+	cellHeight = (ofGetHeight() - (ROWS + 1) * SPACING - TAB_BAR_HEIGHT) / ROWS;
 
 	int currentI = 0;
 	int currentV = 0;
 
 	for (int row = 0; row < ROWS; row++) {
-		for (int col = 1; col < COLS; col++) {
-
-			int x = col * (cellWidth + SPACING) + SPACING;
-			int y = row * (cellHeight + SPACING) + SPACING;
+		for (int col = 0; col < COLS; col++) {
+			int x = col * (cellWidth + SPACING) + SPACING + GUI_WIDTH; // Adjust x position for GUI width
+			int y = row * (cellHeight + SPACING) + SPACING + TAB_BAR_HEIGHT; // Adjust y position for tab bar height
 
 			ofSetColor(ofColor::white);
 
-			if (currentI < countI) {
+			if (currentI < images.size()) {
 				if (pos_resize_image != currentI) {
-					images[currentI].image.draw(x, y, cellWidth, cellHeight);//posicao no ecra primeiras 2, tamanho segundas 2
-					image_coordinates.push_back(pair(x, y));
+					images[currentI].image.draw(x, y, cellWidth, cellHeight); // Position and size
+					image_coordinates.push_back({ x, y });
 				}
 				else {
 					images[currentI].image.bind();
 				}
 				currentI++;
 			}
-			else if (currentV < countV) {
+			else if (currentV < videos.size()) {
 				if (pos_resize_video != currentV) {
-					videos[currentV].video.draw(x, y, cellWidth, cellHeight);//posicao no ecra primeiras 2, tamanho segundas 2
-					video_coordinates.push_back(pair(x, y));
+					videos[currentV].video.draw(x, y, cellWidth, cellHeight); // Position and size
+					video_coordinates.push_back({ x, y });
 				}
 				else {
 					videos[currentV].video.bind();
@@ -468,54 +482,50 @@ void ofApp::draw() {
 	}
 
 	if (pos_resize_image != -1 && !mouse_moved) {
-		for (int i = 0; i < image_coordinates.size();i++) {
+		for (int i = 0; i < image_coordinates.size(); i++) {
 			int x = image_coordinates[i].first;
 			int y = image_coordinates[i].second;
 
 			ofSetColor(ofColor::white);
-			images[pos_resize_image].image.resize(cellWidth + 100, cellWidth + 100);//posicao no ecra primeiras 2, tamanho segundas 2
+			images[pos_resize_image].image.resize(cellWidth + 100, cellWidth + 100);
 			if (x >= 815 && y >= 550 && pos_resize_image == i) {
-				images[pos_resize_image].image.draw(image_coordinates.at(pos_resize_image).first - 100, image_coordinates.at(pos_resize_image).second - 200);
+				images[pos_resize_image].image.draw(x - 100, y - 200);
 			}
 			else if (x >= 815 && pos_resize_image == i) {
-				images[pos_resize_image].image.draw(image_coordinates.at(pos_resize_image).first - 100, image_coordinates.at(pos_resize_image).second);
+				images[pos_resize_image].image.draw(x - 100, y);
 			}
 			else if (y >= 550 && pos_resize_image == i) {
-				images[pos_resize_image].image.draw(image_coordinates.at(pos_resize_image).first, image_coordinates.at(pos_resize_image).second - 200);
+				images[pos_resize_image].image.draw(x, y - 200);
 			}
 			else {
 				if (pos_resize_image == i) {
-					images[pos_resize_image].image.draw(image_coordinates.at(pos_resize_image).first, image_coordinates.at(pos_resize_image).second);
+					images[pos_resize_image].image.draw(x, y);
 				}
 			}
 			ofSetColor(ofColor::gray);
 		}
 	}
 
-
 	if (pos_resize_video != -1 && !mouse_moved) {
-		for (int i = 0; i < video_coordinates.size();i++) {
+		for (int i = 0; i < video_coordinates.size(); i++) {
 			int x = video_coordinates[i].first;
 			int y = video_coordinates[i].second;
 			ofSetColor(ofColor::white);
 			if (x >= 815 && y >= 550 && pos_resize_video == i) {
-				videos[pos_resize_video].video.draw(x - 100, y - 200, cellWidth + 100, cellWidth + 100);;
-				ofSetColor(ofColor::gray);
+				videos[pos_resize_video].video.draw(x - 100, y - 200, cellWidth + 100, cellWidth + 100);
 			}
 			else if (x >= 815 && pos_resize_video == i) {
 				videos[pos_resize_video].video.draw(x - 100, y, cellWidth + 100, cellWidth + 100);
-				ofSetColor(ofColor::gray);
 			}
 			else if (y >= 550 && pos_resize_video == i) {
 				videos[pos_resize_video].video.draw(x, y - 200, cellWidth + 100, cellWidth + 100);
-				ofSetColor(ofColor::gray);
 			}
 			else {
 				if (pos_resize_video == i) {
 					videos[pos_resize_video].video.draw(x, y, cellWidth + 100, cellWidth + 100);
-					ofSetColor(ofColor::gray);
 				}
 			}
+			ofSetColor(ofColor::gray);
 		}
 	}
 
@@ -525,10 +535,9 @@ void ofApp::draw() {
 		ofSetColor(ofColor::gray);
 	}
 
-
 	if (pos_resize_image != -1 && mouse_moved) {
 		ofSetColor(ofColor::white);
-		images[pos_resize_image].image.resize(cellWidth + 100, cellWidth + 100);//posicao no ecra primeiras 2, tamanho segundas 2
+		images[pos_resize_image].image.resize(cellWidth + 100, cellWidth + 100);
 		images[pos_resize_image].image.draw(mouse_x, mouse_y);
 		ofSetColor(ofColor::gray);
 	}
@@ -543,7 +552,39 @@ void ofApp::draw() {
 		}
 	}
 
+	// Draw the GUI last to ensure it is on top of everything else
 	gui.draw();
+}
+
+void ofApp::drawTabs() {
+	int tabWidth = 180;
+	int tabHeight = 35;
+	int tabSpacing = 0;
+	int y = 0; // Starting Y position for the tabs
+
+	tabTags.setPosition(tabSpacing, y);
+	tabTags.setSize(tabWidth, tabHeight);
+	tabTags.draw();
+
+	tabLuminance.setPosition(tabWidth + 2 * tabSpacing, y);
+	tabLuminance.setSize(tabWidth, tabHeight);
+	tabLuminance.draw();
+
+	tabColor.setPosition(2 * tabWidth + 3 * tabSpacing, y);
+	tabColor.setSize(tabWidth, tabHeight);
+	tabColor.draw();
+
+	tabFaceCount.setPosition(3 * tabWidth + 4 * tabSpacing, y);
+	tabFaceCount.setSize(tabWidth, tabHeight);
+	tabFaceCount.draw();
+
+	tabEdgeDistribution.setPosition(4 * tabWidth + 5 * tabSpacing, y);
+	tabEdgeDistribution.setSize(tabWidth, tabHeight);
+	tabEdgeDistribution.draw();
+
+	tabTexture.setPosition(5 * tabWidth + 6 * tabSpacing, y);
+	tabTexture.setSize(tabWidth, tabHeight);
+	tabTexture.draw();
 }
 
 //--------------------------------------------------------------

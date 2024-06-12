@@ -19,7 +19,6 @@ struct VideoWithPath {
 	string xmlPath;
 };
 
-
 class ofApp : public ofBaseApp {
 public:
 	void setup();
@@ -41,6 +40,7 @@ public:
 	void loadMedia(string filePath);
 	void updateGUIFromXML(ofxXmlSettings &xml);
 	void addTagButtonPressed();
+	void drawTabs();
 
 	ofDirectory dir;
 	vector<ImageWithPath> images;
@@ -59,6 +59,15 @@ public:
 	ofxInputField<string> newTagInput;
 	ofxButton addTagButton;
 	bool isFullscreen;
+	int GUI_WIDTH = 220;
+
+	ofxButton tabTags;
+	ofxButton tabLuminance;
+	ofxButton tabColor;
+	ofxButton tabFaceCount;
+	ofxButton tabEdgeDistribution;
+	ofxButton tabTexture;
+	int TAB_BAR_HEIGHT = 40;
 
 	ofxXmlSettings xml;
 
