@@ -429,8 +429,6 @@ void ofApp::update() {
 
 //--------------------------------------------------------------
 void ofApp::draw() {
-	gui.draw();
-
 	cellWidth = (ofGetWidth() - (COLS + 1) * SPACING) / COLS;
 	cellHeight = (ofGetHeight() - (ROWS + 1) * SPACING) / ROWS;
 
@@ -544,6 +542,8 @@ void ofApp::draw() {
 			ofDrawRectangle(cur.x, cur.y, cur.width, cur.height);
 		}
 	}
+
+	gui.draw();
 }
 
 //--------------------------------------------------------------
