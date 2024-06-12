@@ -185,12 +185,12 @@ void ofApp::genXML(ofDirectory dir, xml_algorithms myObj) {
 	firstFramesDir.listDir();
 
 	addTags(myObj, firstFramesDir);
-
 	cout << "Generated metadata successfully" << endl;
 }
 
 void ofApp::addTagButtonPressed() {
 	string newTag = newTagInput;
+	if (newTag.empty()) return; // Don't add empty tags
 
 	// Assuming you have the file path of the current media's XML file
 	string folderXml = ofFilePath::join("", "metadata");
@@ -198,20 +198,26 @@ void ofApp::addTagButtonPressed() {
 	string xmlPath;
 
 	if (pos_resize_image != -1) {
-		fileName = ofFilePath::getBaseName(dir.getName(pos_resize_image));
-		xmlPath = ofFilePath::join(folderXml, fileName + ".xml");
+		xmlPath = images[pos_resize_image].xmlPath;
+		cout << "Image" << endl;
+		cout << xmlPath << endl;
 	}
 	else if (pos_resize_video != -1) {
-		fileName = ofFilePath::getBaseName(dir.getName(pos_resize_video));
-		xmlPath = ofFilePath::join(folderXml, fileName + ".xml");
+		xmlPath = videos[pos_resize_video].xmlPath;
+		cout << "Video" << endl;
+		cout << xmlPath << endl;
 	}
 	else {
 		cout << "No Image or Video Selected" << endl;
 		return;
 	}
 
+	cout << "Attempting to load XML file: " << xmlPath << endl;
+
 	if (ofFile::doesFileExist(xmlPath)) {
 		if (xml.loadFile(xmlPath)) {
+			cout << "XML file loaded successfully: " << xmlPath << endl;
+
 			if (!xml.tagExists("metadata")) {
 				xml.addTag("metadata");
 			}
@@ -223,19 +229,21 @@ void ofApp::addTagButtonPressed() {
 			xml.pushTag("tags");
 
 			int numTags = xml.getNumTags("tag");
-			if (numTags == 0) {
-				xml.addValue("tag", newTag); // Add first tag without index
-			}
-			else {
-				xml.addValue("tag", newTag); // Add subsequent tags
-			}
+			cout << "Current number of tags: " << numTags << endl;
+
+			xml.addValue("tag", newTag); // Add new tag
+			cout << "Added new tag: " << newTag << endl;
 
 			xml.popTag(); // tags
 			xml.popTag(); // metadata
 
-			xml.saveFile(xmlPath);
+			if (xml.saveFile(xmlPath)) {
+				cout << "XML file saved successfully: " << xmlPath << endl;
+			}
+			else {
+				cout << "Failed to save XML file: " << xmlPath << endl;
+			}
 
-			cout << "Tag added: " << newTag << endl;
 			newTagInput = "";
 		}
 		else {
@@ -246,6 +254,7 @@ void ofApp::addTagButtonPressed() {
 		cout << "XML file does not exist: " << xmlPath << endl;
 	}
 }
+
 
 //--------------------------------------------------------------
 void ofApp::setup() {
@@ -282,12 +291,15 @@ void ofApp::setup() {
 	gui.setup();
 
 	gui.add(togFullscreen.setup("Fullscreen", false));
-	gui.add(tags.setup("Tags", ""));
 	gui.add(newTagInput.setup("New Tag", ""));
 	gui.add(addTagButton.setup("Add Tag"));
-	gui.add(luminance.setup("Luminance", 50, 0, 255));
-	gui.add(color.setup("Color", ofColor(100, 100, 140), ofColor(0, 0), ofColor(255, 255)));
-	gui.add(numFaces.setup("Number of Faces", 0, 0, 100));
+	gui.add(luminance.setup("Luminance", ""));
+	gui.add(color.setup("Color", ""));
+	gui.add(numFaces.setup("Number of Faces", ""));
+	gui.add(avgEdge.setup("Average Edge", ""));
+	gui.add(varEdge.setup("Variant Edge", ""));
+	gui.add(avgText.setup("Average Texture", ""));
+	gui.add(varText.setup("Variant Texture", ""));
 	gui.add(screenSize.setup("Screen Size", ofToString(ofGetWidth()) + "x" + ofToString(ofGetHeight())));
 
 	togFullscreen.addListener(this, &ofApp::toggleFullscreen);
@@ -344,36 +356,55 @@ void ofApp::loadMedia(string filePath) {
 	}
 }
 
-void ofApp::updateGUIFromXML(ofxXmlSettings &xml) {
-	// Tags
-	int numTags = xml.getNumTags("metadata:tags");
-	cout << numTags << endl;
-	string allTags = "";
-	for (int i = 0; i < numTags; i++) {
-		if (i > 0) {
-			allTags += ", ";
-		}
-		allTags += xml.getValue("metadata:tags:tag[" + ofToString(i) + "]", "");
-	}
-	tags.setup("Tags", allTags);  // Update the tags label
-
-	//Color
+void ofApp::updateGUIFromXML(ofxXmlSettings& xml) {
+	// Color
 	int r = xml.getValue("metadata:color:r", 0);
 	int g = xml.getValue("metadata:color:g", 0);
 	int b = xml.getValue("metadata:color:b", 0);
-	color = ofColor(r, g, b);
+	string colorText = "{" + ofToString(r) + ", " + ofToString(g) + ", " + ofToString(b) + "}";
+	color = colorText;
 
-	//Luminance
-	luminance = xml.getValue("metadata:luminance:luminance", 0.5);
+	// Luminance
+	luminance = ofToString(xml.getValue("metadata:luminance:luminance", 0.5));
+
+	// Number of Faces
+	numFaces = ofToString(xml.getValue("metadata:numberFaces:numberOfFaces", 0));
 
 	//Edges
+	//AVG
+	int avgEdgeSum = 0;
+	for (int i = 0; i < 5; i++) {
+		string xmlLocation = "metadata:edges:avgEdges:avg_l" + ofToString(i+1);
+		avgEdgeSum += xml.getValue(xmlLocation, 0);
+	}
+	avgEdge = ofToString(avgEdgeSum / 5);
 
+	//VAR
+	int varEdgeSum = 0;
+	for (int i = 0; i < 5; i++) {
+		string xmlLocation = "metadata:edges:varEdges:dev" + ofToString(i + 1);
+		varEdgeSum += xml.getValue(xmlLocation, 0);
+	}
+	varEdge = ofToString(varEdgeSum / 5);
 
 	//Textures
+	//AVG
+	int avgTextSum = 0;
+	for (int i = 0; i < 6; i++) {
+		string xmlLocation = "metadata:textures:avgTextures:avg_l" + ofToString(i + 1);
+		avgTextSum += xml.getValue(xmlLocation, 0);
+	}
+	avgText = ofToString(avgTextSum / 6);
 
-	//NumberFaces
-	numFaces = xml.getValue("metadata:numberFaces:numberOfFaces", 0);
+	//VAR
+	int varTextSum = 0;
+	for (int i = 0; i < 6; i++) {
+		string xmlLocation = "metadata:textures:varTextures:dev" + ofToString(i + 1);
+		varTextSum += xml.getValue(xmlLocation, 0);
+	}
+	varText = ofToString(varTextSum / 6);
 }
+
 
 //--------------------------------------------------------------
 void ofApp::update() {

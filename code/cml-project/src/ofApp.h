@@ -48,11 +48,14 @@ public:
 
 	ofxPanel gui;
 	ofxToggle togFullscreen;
-	ofxColorSlider color;
-	ofxFloatSlider luminance;
+	ofxLabel color;
+	ofxLabel luminance;
 	ofxLabel screenSize;
-	ofxIntField numFaces;
-	ofxLabel tags;
+	ofxLabel numFaces;
+	ofxLabel avgEdge;
+	ofxLabel varEdge;
+	ofxLabel avgText;
+	ofxLabel varText;
 	ofxInputField<string> newTagInput;
 	ofxButton addTagButton;
 	bool isFullscreen;
