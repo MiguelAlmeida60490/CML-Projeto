@@ -5,6 +5,8 @@
 #include <ofxPanel.h>
 #include <ofxGui.h>
 #include <ofxXmlSettings.h>
+#include <deque>
+
 class xml_algorithms;
 
 struct ImageWithPath {
@@ -79,6 +81,7 @@ public:
 	vector<Coordinate> video_coordinates, image_coordinates;
 
 	ofVideoGrabber vidGrabber;
+
 	//ofPixels video, ;
 	//ofTexture videoTexture;
 	int camWidth, camHeight;
@@ -96,6 +99,17 @@ public:
 	ofImage img;
 
 	string metadataDir, metadataPath;
+	ofxCvColorImage			colorImg;
+	ofxCvGrayscaleImage 	grayImage;
+	ofxCvGrayscaleImage 	grayBg;
+	ofxCvGrayscaleImage 	grayDiff;
+
+	ofxCvContourFinder 	contourFinder;
+
+	int x;
+	int y;
+	ofRectangle rect;
+	bool bLearnBakground, see_movementcameras;
 private:
 	void addTags(xml_algorithms myObj, ofDirectory dir);
 	void getVideoFirstFrame();

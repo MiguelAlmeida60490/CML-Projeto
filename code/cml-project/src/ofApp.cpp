@@ -254,7 +254,9 @@ void ofApp::addTagButtonPressed() {
 	}
 }
 
-
+//video.allocate(camWidth, camHeight, OF_PIXELS_RGB);
+//videoTexture.allocate(video);
+//videoTexture.loadData(video);
 //--------------------------------------------------------------
 void ofApp::setup() {
 	camWidth = ofGetWidth() / 1.5;  // try to grab at this size.
@@ -270,9 +272,19 @@ void ofApp::setup() {
 	vidGrabber.setDeviceID(0);
 	vidGrabber.initGrabber(camWidth, camHeight);
 	vidGrabber.setDesiredFrameRate(10);
-	//video.allocate(camWidth, camHeight, OF_PIXELS_RGB);
-	//videoTexture.allocate(video);
-	//videoTexture.loadData(video);
+
+
+	
+	colorImg.allocate(camWidth, camHeight);
+	grayImage.allocate(camWidth, camHeight);
+	grayBg.allocate(camWidth, camHeight);
+	grayDiff.allocate(camWidth, camHeight);
+
+	x = (3 * grayDiff.getWidth() / 4);
+	y = grayDiff.getHeight() / 3;
+	bLearnBakground = true;
+	see_movementcameras = false;
+	
 
 	ofSetVerticalSync(true);
 	show_camera = false;
@@ -420,22 +432,66 @@ void ofApp::updateGUIFromXML(ofxXmlSettings& xml) {
 //--------------------------------------------------------------
 void ofApp::update() {
 	if (isFullscreen) {
-		
-	}
 
-	if (show_camera == true) {
-		if (vidGrabber.isFrameNew()) {
-			ofPixels& pixels = vidGrabber.getPixels();
-			img = ofImage(pixels);
-			finder.findHaarObjects(img);
-			cout << finder.blobs.size() << endl;
-		}
-		vidGrabber.update();
 	}
 	for (int i = 0; i < videos.size(); i++) {
 		videos[i].video.update();
 	}
+	vidGrabber.update();
+	if(vidGrabber.isFrameNew()){
+		if (show_camera == true) {
+			ofPixels& pixels = vidGrabber.getPixels();
+			img.setFromPixels(pixels);
 
+			if (show_camera) {
+				finder.findHaarObjects(img);
+				cout << finder.blobs.size() << endl;
+			}
+		}
+		if (see_movementcameras) {
+
+			colorImg.setFromPixels(vidGrabber.getPixels());
+			grayImage = colorImg;
+
+			if (bLearnBakground == true) {
+				grayBg = grayImage;
+				bLearnBakground = false;
+			}
+
+			grayDiff.absDiff(grayImage, grayBg);
+			grayDiff.threshold(80);
+
+
+			contourFinder.findContours(grayDiff, 20, (320 * 240) / 3, 10, true);
+		}
+	}
+
+	if (contourFinder.nBlobs > 0) {
+		ofRectangle rLast = rect;
+		rect = contourFinder.blobs[0].boundingRect;
+
+		int x_min = rect.getMaxX();
+		int x_max = rect.getMinX();
+		int y_min = rect.getMinY();
+		int y_max = rect.getMaxY();
+
+
+		if (x >= x_max && x <= x_min && y >= y_min && y <= y_max) {//if user moves head to the right to the green cross
+			cout << "Full Screen" << endl;
+			//ofSetFullscreen(true);
+			//isFullscreen = true;
+			//ofSetWindowShape(1920, 1080);
+			show_camera = false;
+			see_movementcameras = false;
+		}
+
+		else  if (rLast.getCenter().x == rect.getCenter().x + 3 || rLast.getCenter().y == rect.getCenter().y + 3) {//if user move hands
+			cout << "Show camera" << endl;
+			show_camera = true;
+			see_movementcameras = false;
+		}
+
+	}
 }
 
 //--------------------------------------------------------------
@@ -554,6 +610,29 @@ void ofApp::draw() {
 
 	// Draw the GUI last to ensure it is on top of everything else
 	gui.draw();
+
+	
+	if (see_movementcameras) {
+		ofFill();
+		ofSetColor(ofColor::gray);
+		ofDrawRectangle(0, 0, 640, 480);
+
+		ofSetColor(ofColor::darkGray);
+		ofDrawLine(320, 240, 640, 240);
+		ofSetHexColor(0xffffff);
+
+		colorImg.draw(0, 0, 320, 240);
+		grayDiff.draw(0, 240, 320, 240);
+
+		contourFinder.draw(320, 240, 320, 240);
+	
+		//Fullscreen user indication
+		ofSetColor(0, 255, 0);
+		ofDrawLine(x/1.87 + 320 - 10, y/1.5, x/ 1.87 + 320 + 10, y / 1.5);
+		ofDrawLine(x/1.87 + 320, y / 1.5 - 10, x/ 1.87 + 320, y / 1.5 + 10);
+	}
+
+
 }
 
 void ofApp::drawTabs() {
@@ -604,6 +683,12 @@ void ofApp::keyPressed(int key) {
 			videos[pos_resize_video].video.play();
 			paused = false;
 		}
+		break;
+	case '+':
+		see_movementcameras = !see_movementcameras;
+		break;
+	case '-':
+		bLearnBakground = true;
 		break;
 	}
 }
@@ -714,3 +799,5 @@ void ofApp::toggleFullscreen(bool& isFullscreen) {
 		ofSetWindowShape(1024, 768);
 	}
 }
+
+
