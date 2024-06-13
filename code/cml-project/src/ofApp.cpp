@@ -192,8 +192,6 @@ void ofApp::addTagButtonPressed() {
 	if (newTag.empty()) return; // Don't add empty tags
 
 	// Assuming you have the file path of the current media's XML file
-	string folderXml = ofFilePath::join("", "metadata");
-	string fileName;
 	string xmlPath;
 
 	if (pos_resize_image != -1) {
@@ -227,11 +225,14 @@ void ofApp::addTagButtonPressed() {
 			}
 			xml.pushTag("tags");
 
-			int numTags = xml.getNumTags("tag");
-			cout << "Current number of tags: " << numTags << endl;
-
-			xml.addValue("tag", newTag); // Add new tag
-			cout << "Added new tag: " << newTag << endl;
+			int numTags = 0;
+			// Count tags with names starting with "tag"
+			while (xml.tagExists("tag" + ofToString(numTags))) {
+				numTags++;
+			}
+			string tagName = "tag" + ofToString(numTags); // Unique tag name
+			xml.addValue(tagName, newTag); // Add new tag
+			cout << "Added new tag: " << newTag << " as " << tagName << endl;
 
 			xml.popTag(); // tags
 			xml.popTag(); // metadata
@@ -253,6 +254,7 @@ void ofApp::addTagButtonPressed() {
 		cout << "XML file does not exist: " << xmlPath << endl;
 	}
 }
+
 
 //video.allocate(camWidth, camHeight, OF_PIXELS_RGB);
 //videoTexture.allocate(video);
@@ -299,7 +301,7 @@ void ofApp::setup() {
 
 	dir.sort();
 
-	gui.setup();
+	gui.setup("XML Info");
 
 	gui.add(togFullscreen.setup("Fullscreen", false));
 	gui.add(newTagInput.setup("New Tag", ""));
@@ -313,22 +315,75 @@ void ofApp::setup() {
 	gui.add(varText.setup("Variant Texture", ""));
 	gui.add(screenSize.setup("Screen Size", ofToString(ofGetWidth()) + "x" + ofToString(ofGetHeight())));
 
-	int guiX = 10;
-	int guiY = TAB_BAR_HEIGHT + 10; // Adjust Y position for the GUI to be below the tabs
+	int value = (ofGetWidth() / 6);
+
+	tags.setup("Tags");
+	tags.setPosition(0, TAB_BAR_HEIGHT);
+	tags.setDefaultWidth(value);
+
+	luminanceSearch.setup("Luminance Filter");
+	luminanceSearch.add(luminanceFilter.setup("Luminance", 50, 0, 255));
+	luminanceSearch.setPosition(value, TAB_BAR_HEIGHT);
+	luminanceSearch.setDefaultWidth(value);
+
+	colorSearch.setup("Color Filter");
+	colorSearch.add(colorFilter.setup("Color", ofColor(100, 100, 100), ofColor(0, 0), ofColor(255, 255)));
+	colorSearch.setPosition(value * 2, TAB_BAR_HEIGHT);	
+	colorSearch.setDefaultWidth(value);
+
+	numFacesSearch.setup("Number of Faces");
+	numFacesSearch.add(numFacesFilter.setup("Number of Faces", 0, 0, 100));
+	numFacesSearch.setPosition(value*3, TAB_BAR_HEIGHT);
+	numFacesSearch.setDefaultWidth(value);
+
+	edgesSearch.setup("Edges Distribution");
+	edgesSearch.add(avgEdgeFilter.setup("Average Edge", 0, 0, 30));
+	edgesSearch.add(devEdgeFilter.setup("Variant Edge", 0, 0, 30));
+	edgesSearch.setPosition(value*4, TAB_BAR_HEIGHT);
+	edgesSearch.setDefaultWidth(value);
+
+	texturesSearch.setup("Textures");
+	texturesSearch.add(avgTextFilter.setup("Average Texture", 0, 0, 30));
+	texturesSearch.add(devTextFilter.setup("Variant Texture", 0, 0, 30));
+	texturesSearch.setPosition(value*5, TAB_BAR_HEIGHT);
+	texturesSearch.setDefaultWidth(value);
+
+
+	int guiX = 0;
+	int guiY = TAB_BAR_HEIGHT + 100; // Adjust Y position for the GUI to be below the tabs
 	gui.setPosition(guiX, guiY);
+	gui.minimize();
 
 	togFullscreen.addListener(this, &ofApp::toggleFullscreen);
 	addTagButton.addListener(this, &ofApp::addTagButtonPressed);
 
 	//Tab
-	tabTags.setup("Tags");
-	tabLuminance.setup("Luminance");
-	tabColor.setup("Color");
-	tabFaceCount.setup("Face Count");
-	tabEdgeDistribution.setup("Edge Distribution");
-	tabTexture.setup("Texture");
+	isTagsOpen = false;
+	isColorOpen = false;
+	isLuminanceOpen = false;
+	isNumFacesOpen = false;
+	isEdgesOpen = false;
+	isTexturesOpen = false;
 
-	for (int i = 0; i < dir.size(); i++) {
+	tabTags.setup("Tags");
+	tabTags.addListener(this, &ofApp::openTags);
+
+	tabLuminance.setup("Luminance");
+	tabLuminance.addListener(this, &ofApp::openLuminanceFilter);
+
+	tabColor.setup("Color");
+	tabColor.addListener(this, &ofApp::openColorFilter);
+
+	tabFaceCount.setup("Face Count");
+	tabFaceCount.addListener(this, &ofApp::openNumFacesFilter);
+
+	tabEdgeDistribution.setup("Edge Distribution");
+	tabEdgeDistribution.addListener(this, &ofApp::openEdgesFilter);
+
+	tabTexture.setup("Texture");
+	tabTexture.addListener(this, &ofApp::openTexturesFilter);
+
+	for (int i  = 0; i < dir.size(); i++) {
 		string extension = dir.getFile(i).getExtension();
 		if (extension == "mp4") {
 			countV++;
@@ -370,6 +425,84 @@ void ofApp::setup() {
 	genXML(dir, myObj);
 }
 
+void ofApp::openTags() {
+	isTagsOpen = !isTagsOpen;
+
+	// Close other panels if needed
+	if (isTagsOpen) {
+		isColorOpen = false;
+		isLuminanceOpen = false;
+		isNumFacesOpen = false;
+		isEdgesOpen = false;
+		isTexturesOpen = false;
+	}
+}
+
+void ofApp::openColorFilter() {
+	isColorOpen = !isColorOpen;
+
+	// Close other panels if needed
+	if (isColorOpen) {
+		isTagsOpen = false;
+		isLuminanceOpen = false;
+		isNumFacesOpen = false;
+		isEdgesOpen = false;
+		isTexturesOpen = false;
+	}
+}
+
+void ofApp::openLuminanceFilter() {
+	isLuminanceOpen = !isLuminanceOpen;
+
+	// Close other panels if needed
+	if (isLuminanceOpen) {
+		isTagsOpen = false;
+		isColorOpen = false;
+		isNumFacesOpen = false;
+		isEdgesOpen = false;
+		isTexturesOpen = false;
+	}
+}
+
+void ofApp::openNumFacesFilter() {
+	isNumFacesOpen = !isNumFacesOpen;
+
+	// Close other panels if needed
+	if (isNumFacesOpen) {
+		isTagsOpen = false;
+		isLuminanceOpen = false;
+		isColorOpen = false;
+		isEdgesOpen = false;
+		isTexturesOpen = false;
+	}
+}
+
+void ofApp::openEdgesFilter() {
+	isEdgesOpen = !isEdgesOpen;
+
+	// Close other panels if needed
+	if (isEdgesOpen) {
+		isTagsOpen = false;
+		isLuminanceOpen = false;
+		isColorOpen = false;
+		isNumFacesOpen = false;
+		isTexturesOpen = false;
+	}
+}
+
+void ofApp::openTexturesFilter() {
+	isTexturesOpen = !isTexturesOpen;
+
+	// Close other panels if needed
+	if (isTexturesOpen) {
+		isTagsOpen = false;
+		isLuminanceOpen = false;
+		isColorOpen = false;
+		isNumFacesOpen = false;
+		isEdgesOpen = false;
+	}
+}
+
 void ofApp::loadMedia(string filePath) {
 	if (xml.loadFile(filePath)) {
 		updateGUIFromXML(xml);
@@ -380,53 +513,104 @@ void ofApp::loadMedia(string filePath) {
 }
 
 void ofApp::updateGUIFromXML(ofxXmlSettings& xml) {
-	// Color
-	int r = xml.getValue("metadata:color:r", 0);
-	int g = xml.getValue("metadata:color:g", 0);
-	int b = xml.getValue("metadata:color:b", 0);
-	string colorText = "{" + ofToString(r) + ", " + ofToString(g) + ", " + ofToString(b) + "}";
-	color = colorText;
+	// Clear previous tags
+	tags.clear();
+	tagsToDisplay.clear();
 
-	// Luminance
-	luminance = ofToString(xml.getValue("metadata:luminance:luminance", 0.5));
-
-	// Number of Faces
-	numFaces = ofToString(xml.getValue("metadata:numberFaces:numberOfFaces", 0));
-
-	//Edges
-	//AVG
-	int avgEdgeSum = 0;
-	for (int i = 0; i < 5; i++) {
-		string xmlLocation = "metadata:edges:avgEdges:avg_l" + ofToString(i+1);
-		avgEdgeSum += xml.getValue(xmlLocation, 0);
+	if (pos_resize_image == -1 && pos_resize_video == -1) {
+		cout << "No image or video has been selected" << endl;
+		return; // Exit the function if no image or video is selected
 	}
-	avgEdge = ofToString(avgEdgeSum / 5);
 
-	//VAR
-	int varEdgeSum = 0;
-	for (int i = 0; i < 5; i++) {
-		string xmlLocation = "metadata:edges:varEdges:dev" + ofToString(i + 1);
-		varEdgeSum += xml.getValue(xmlLocation, 0);
+	std::string xmlPath;
+	if (pos_resize_image != -1) {
+		xmlPath = images[pos_resize_image].xmlPath;
 	}
-	varEdge = ofToString(varEdgeSum / 5);
+	else if (pos_resize_video != -1) {
+		xmlPath = videos[pos_resize_video].xmlPath;
+	}
 
-	//Textures
-	//AVG
-	int avgTextSum = 0;
-	for (int i = 0; i < 6; i++) {
-		string xmlLocation = "metadata:textures:avgTextures:avg_l" + ofToString(i + 1);
-		avgTextSum += xml.getValue(xmlLocation, 0);
-	}
-	avgText = ofToString(avgTextSum / 6);
+	if (xml.load(xmlPath)) {
+		// Parse and display tags
+		xml.pushTag("metadata");
+		xml.pushTag("tags");
 
-	//VAR
-	int varTextSum = 0;
-	for (int i = 0; i < 6; i++) {
-		string xmlLocation = "metadata:textures:varTextures:dev" + ofToString(i + 1);
-		varTextSum += xml.getValue(xmlLocation, 0);
+		int numTags = 0;
+		// Count tags with names starting with "tag"
+		while (xml.tagExists("tag" + ofToString(numTags))) {
+			numTags++;
+		}
+
+		cout << "Number of tags: " << numTags << endl; // Debugging
+
+		for (int i = 0; i < numTags; i++) {
+			std::string tagName = "tag" + ofToString(i);
+			std::string tag = xml.getValue(tagName, "");
+			if (!tag.empty()) {
+				ofxLabel* tagToAdd = new ofxLabel();
+				tagToAdd->setup("", tag);
+				tags.add(tagToAdd); // Add label to the panel
+				tagsToDisplay.push_back(*tagToAdd);
+				cout << "Tag added: " << tag << endl; // Debugging
+			}
+		}
+
+		xml.popTag(); // tags
+		xml.popTag(); // metadata
+
+		// Color
+		int r = xml.getValue("metadata:color:r", 0);
+		int g = xml.getValue("metadata:color:g", 0);
+		int b = xml.getValue("metadata:color:b", 0);
+		string colorText = "{" + ofToString(r) + ", " + ofToString(g) + ", " + ofToString(b) + "}";
+		color = colorText;
+
+		// Luminance
+		luminance = ofToString(xml.getValue("metadata:luminance:luminance", 0.5));
+
+		// Number of Faces
+		numFaces = ofToString(xml.getValue("metadata:numberFaces:numberOfFaces", 0));
+
+		// Edges
+		// AVG
+		int avgEdgeSum = 0;
+		for (int i = 0; i < 5; i++) {
+			string xmlLocation = "metadata:edges:avgEdges:avg_l" + ofToString(i + 1);
+			avgEdgeSum += xml.getValue(xmlLocation, 0);
+		}
+		avgEdge = ofToString(avgEdgeSum / 5);
+
+		// VAR
+		int varEdgeSum = 0;
+		for (int i = 0; i < 5; i++) {
+			string xmlLocation = "metadata:edges:varEdges:dev" + ofToString(i + 1);
+			varEdgeSum += xml.getValue(xmlLocation, 0);
+		}
+		varEdge = ofToString(varEdgeSum / 5);
+
+		// Textures
+		// AVG
+		int avgTextSum = 0;
+		for (int i = 0; i < 6; i++) {
+			string xmlLocation = "metadata:textures:avgTextures:avg_l" + ofToString(i + 1);
+			avgTextSum += xml.getValue(xmlLocation, 0);
+		}
+		avgText = ofToString(avgTextSum / 6);
+
+		// VAR
+		int varTextSum = 0;
+		for (int i = 0; i < 6; i++) {
+			string xmlLocation = "metadata:textures:varTextures:dev" + ofToString(i + 1);
+			varTextSum += xml.getValue(xmlLocation, 0);
+		}
+		varText = ofToString(varTextSum / 6);
+
 	}
-	varText = ofToString(varTextSum / 6);
+	else {
+		cout << "Failed to load XML: " << xmlPath << endl;
+	}
 }
+
 
 
 //--------------------------------------------------------------
@@ -608,6 +792,42 @@ void ofApp::draw() {
 		}
 	}
 
+	if (isTagsOpen) {
+		if (pos_resize_image != -1 || pos_resize_video != -1) {
+			tags.draw();
+		}
+	}
+
+	if (isLuminanceOpen) {
+		if (pos_resize_image != -1 || pos_resize_video != -1) {
+			luminanceSearch.draw();
+		}
+	}
+
+	if (isColorOpen) {
+		if (pos_resize_image != -1 || pos_resize_video != -1) {
+			colorSearch.draw();
+		}
+	}
+
+	if (isNumFacesOpen) {
+		if (pos_resize_image != -1 || pos_resize_video != -1) {
+			numFacesSearch.draw();
+		}
+	}
+
+	if (isEdgesOpen) {
+		if (pos_resize_image != -1 || pos_resize_video != -1) {
+			edgesSearch.draw();
+		}
+	}
+
+	if (isTexturesOpen) {
+		if (pos_resize_image != -1 || pos_resize_video != -1) {
+			texturesSearch.draw();
+		}
+	}
+
 	// Draw the GUI last to ensure it is on top of everything else
 	gui.draw();
 
@@ -636,7 +856,7 @@ void ofApp::draw() {
 }
 
 void ofApp::drawTabs() {
-	int tabWidth = 180;
+	int tabWidth = ofGetWidth()/6;
 	int tabHeight = 35;
 	int tabSpacing = 0;
 	int y = 0; // Starting Y position for the tabs

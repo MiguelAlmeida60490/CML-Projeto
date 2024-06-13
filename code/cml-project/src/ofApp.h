@@ -44,9 +44,43 @@ public:
 	void addTagButtonPressed();
 	void drawTabs();
 
+	void openTags();
+	void openColorFilter();
+	void openLuminanceFilter();
+	void openNumFacesFilter();
+	void openEdgesFilter();
+	void openTexturesFilter();
+
+	bool isTagsOpen;
+	bool isColorOpen;
+	bool isLuminanceOpen;
+	bool isNumFacesOpen;
+	bool isEdgesOpen;
+	bool isTexturesOpen;
+
 	ofDirectory dir;
 	vector<ImageWithPath> images;
 	vector<VideoWithPath> videos;
+
+	ofxPanel tags;
+	vector<ofxLabel> tagsToDisplay;
+
+	ofxPanel colorSearch;
+	ofxColorSlider colorFilter;
+
+	ofxPanel luminanceSearch;
+	ofxIntSlider luminanceFilter;
+
+	ofxPanel numFacesSearch;
+	ofxIntSlider numFacesFilter;
+
+	ofxPanel edgesSearch;
+	ofxIntSlider avgEdgeFilter;
+	ofxIntSlider devEdgeFilter;
+
+	ofxPanel texturesSearch;
+	ofxIntSlider avgTextFilter;
+	ofxIntSlider devTextFilter;
 
 	ofxPanel gui;
 	ofxToggle togFullscreen;
