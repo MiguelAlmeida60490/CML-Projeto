@@ -398,7 +398,6 @@ void ofApp::setup() {
 
 	settings.setup("Settings");
 	settings.add(togFullscreen.setup("Fullscreen", false));
-	settings.add(screenSize.setup("Screen Size", ofToString(ofGetWidth()) + "x" + ofToString(ofGetHeight())));
 	settings.add(resetFiltersButton.setup("Reset Filters"));
 	resetFiltersButton.addListener(this, &ofApp::resetFilters);
 
@@ -1220,7 +1219,7 @@ void ofApp::draw() {
 			}
 		}
 
-		if (pos_resize_image != -1 && !mouse_moved) {
+		if (filteredImages.size() > 0 && pos_resize_image != -1 && !mouse_moved) {
 			for (int i = 0; i < image_coordinates.size(); i++) {
 				int x = image_coordinates[i].first;
 				int y = image_coordinates[i].second;
@@ -1245,7 +1244,7 @@ void ofApp::draw() {
 			}
 		}
 
-		if (pos_resize_video != -1 && !mouse_moved) {
+		if (filteredVideos.size() > 0 && pos_resize_video != -1 && !mouse_moved) {
 			for (int i = 0; i < video_coordinates.size(); i++) {
 				int x = video_coordinates[i].first;
 				int y = video_coordinates[i].second;
@@ -1268,13 +1267,13 @@ void ofApp::draw() {
 			}
 		}
 
-		if (pos_resize_video != -1 && mouse_moved) {
+		if (filteredVideos.size() > 0 &&  pos_resize_video != -1 && mouse_moved) {
 			ofSetColor(ofColor::white);
 			filteredVideos[pos_resize_video].video.draw(mouse_x, mouse_y, cellWidth + 100, cellWidth + 100);
 			ofSetColor(ofColor::gray);
 		}
 
-		if (pos_resize_image != -1 && mouse_moved) {
+		if (filteredImages.size() > 0 && pos_resize_image != -1 && mouse_moved) {
 			ofSetColor(ofColor::white);
 			filteredImages[pos_resize_image].image.resize(cellWidth + 100, cellWidth + 100);
 			filteredImages[pos_resize_image].image.draw(mouse_x, mouse_y);

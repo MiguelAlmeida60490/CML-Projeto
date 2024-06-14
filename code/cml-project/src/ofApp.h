@@ -102,8 +102,6 @@ public:
 
 	ofxPanel tags;
 	ofxInputField<string> tagFilter;
-	vector<ofxLabel> tagsToDisplay;
-
 	ofxPanel colorSearch;
 	ofxIntSlider colorR;
 	ofxIntSlider colorG;
@@ -139,7 +137,6 @@ public:
 	ofxToggle togFullscreen;
 	ofxLabel color;
 	ofxLabel luminance;
-	ofxLabel screenSize;
 	ofxLabel numFaces;
 	ofxLabel numObjects;
 	ofxLabel avgEdge;
@@ -196,4 +193,8 @@ private:
 	void getVideoFirstFrame();
 	void genXML(ofDirectory dir, xml_algorithms myObj);
 	std::set<string> uniqueTags;
+
+	unsigned long startTime;
+	bool isDelayed;
+	unsigned long delayDuration = 200;
 };
