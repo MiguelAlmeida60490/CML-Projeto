@@ -7,6 +7,9 @@ bool ofApp::isFilterOpen() {
 }
 
 void ofApp::addTags(xml_algorithms myObj, ofDirectory dir) {
+	ofImage imageToCompare;
+	imageToCompare.load("imagesToMatch/img_match.jpg");
+
 	for (int i = 0; i < dir.size(); i++) {
 		string fileName = ofFilePath::getBaseName(dir.getName(i));
 		string extension = dir.getFile(i).getExtension();
@@ -39,6 +42,8 @@ void ofApp::addTags(xml_algorithms myObj, ofDirectory dir) {
 			myObj.setFilter(image, false);
 			int* avg_gabor = myObj.getAvgGabor();
 			int* dev_gabor = myObj.getVarianceGabor();
+
+			int countMatches = myObj.getMatches(image, imageToCompare);
 
 			if (!xml.tagExists("metadata")) {
 				xml.addTag("metadata");
@@ -107,6 +112,13 @@ void ofApp::addTags(xml_algorithms myObj, ofDirectory dir) {
 				xml.addTag("numberFaces");
 				xml.pushTag("numberFaces");
 				xml.addValue("numberOfFaces", nFaces);
+				xml.popTag();
+			}
+
+			if (!xml.tagExists("numberObjects")) {
+				xml.addTag("numberObjects");
+				xml.pushTag("numberObjects");
+				xml.addValue("numberObjects", countMatches);
 				xml.popTag();
 			}
 
@@ -351,14 +363,15 @@ void ofApp::setup() {
 	grayBg.allocate(camWidth, camHeight);
 	grayDiff.allocate(camWidth, camHeight);
 
-	x = (3 * grayDiff.getWidth() / 4);
-	y = grayDiff.getHeight() / 3;
+	x_motion = (3 * grayDiff.getWidth() / 4);
+	y_motion = grayDiff.getHeight() / 3;
 	bLearnBakground = true;
 	see_movementcameras = false;
 	
 
-	ofSetVerticalSync(true);
 	show_camera = false;
+	isFullscreen = false;
+	ofSetVerticalSync(true);
 
 
 	pos_resize_video = -1, pos_resize_image = -1;
@@ -377,6 +390,7 @@ void ofApp::setup() {
 	gui.add(luminance.setup("Luminance", ""));
 	gui.add(color.setup("Color", ""));
 	gui.add(numFaces.setup("Number of Faces", ""));
+	gui.add(numObjects.setup("Number of Objects", ""));
 	gui.add(avgEdge.setup("Average Edge", ""));
 	gui.add(varEdge.setup("Variant Edge", ""));
 	gui.add(avgText.setup("Average Texture", ""));
@@ -1098,7 +1112,7 @@ void ofApp::update() {
 		int y_max = rect.getMaxY();
 
 
-		if (x >= x_max && x <= x_min && y >= y_min && y <= y_max) {//if user moves head to the right to the green cross
+		if (x_motion >= x_max && x_motion <= x_min && y_motion >= y_min && y_motion <= y_max) {//if user moves head to the right to the green cross
 			cout << "Full Screen" << endl;
 			//ofSetFullscreen(true);
 			//isFullscreen = true;
@@ -1372,8 +1386,8 @@ void ofApp::draw() {
 	
 		//Fullscreen user indication
 		ofSetColor(0, 255, 0);
-		ofDrawLine(x/1.87 + 320 - 10, y/1.5, x/ 1.87 + 320 + 10, y / 1.5);
-		ofDrawLine(x/1.87 + 320, y / 1.5 - 10, x/ 1.87 + 320, y / 1.5 + 10);
+		ofDrawLine(x_motion/1.87 + 320 - 10, y_motion /1.5, x_motion / 1.87 + 320 + 10, y_motion / 1.5);
+		ofDrawLine(x_motion /1.87 + 320, y_motion / 1.5 - 10, x_motion / 1.87 + 320, y_motion / 1.5 + 10);
 	}
 
 
@@ -1427,7 +1441,7 @@ void ofApp::keyPressed(int key) {
 			}
 		}
 		break;
-	case 99: //c
+	case 99: //c - show or unshow camara
 		show_camera = !show_camera;
 		break;
 	case 112://p -> play video
@@ -1444,10 +1458,10 @@ void ofApp::keyPressed(int key) {
 			}
 		}
 		break;
-	case '+':
+	case '+'://show or unshow motion detection camaras
 		see_movementcameras = !see_movementcameras;
 		break;
-	case '-':
+	case '-'://clean objects in front of the backgroud
 		bLearnBakground = true;
 		break;
 	}

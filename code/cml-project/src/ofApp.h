@@ -7,6 +7,7 @@
 #include <ofxXmlSettings.h>
 #include <deque>
 #include <set>
+#include <vector>
 
 class xml_algorithms;
 
@@ -22,8 +23,18 @@ struct VideoWithPath {
 	string xmlPath;
 };
 
+typedef pair<float, float> Coordinate;
+
 class ofApp : public ofBaseApp {
 public:
+	// CONSTANT VARIABLES
+	static const int BLANK_SPACE = 32;
+	static const int ROWS = 7;
+	static const int COLS = 5;
+	static const int SPACING = 10;
+	int GUI_WIDTH = 220;
+	int TAB_BAR_HEIGHT = 40;
+
 	void setup();
 	void update();
 	void draw();
@@ -39,9 +50,9 @@ public:
 	void windowResized(int w, int h);
 	void dragEvent(ofDragInfo dragInfo);
 	void gotMessage(ofMessage msg);
-	void toggleFullscreen(bool & isFullscreen);
+	void toggleFullscreen(bool& isFullscreen);
 	void loadMedia(string filePath);
-	void updateGUIFromXML(ofxXmlSettings &xml);
+	void updateGUIFromXML(ofxXmlSettings& xml);
 	void addTagButtonPressed();
 	void drawTabs();
 
@@ -89,13 +100,13 @@ public:
 
 	ofxPanel tags;
 	ofxInputField<string> tagFilter;
+	vector<ofxLabel> tagsToDisplay;
 
 	ofxPanel colorSearch;
 	ofxIntSlider colorR;
 	ofxIntSlider colorG;
 	ofxIntSlider colorB;
-	//ofxColorSlider colorFilter;
-
+	ofxColorSlider colorFilter;
 
 	ofxPanel luminanceSearch;
 	ofxIntSlider luminanceFilter;
@@ -124,6 +135,7 @@ public:
 	ofxLabel luminance;
 	ofxLabel screenSize;
 	ofxLabel numFaces;
+	ofxLabel numObjects;
 	ofxLabel avgEdge;
 	ofxLabel varEdge;
 	ofxLabel avgText;
@@ -131,7 +143,6 @@ public:
 	ofxInputField<string> newTagInput;
 	ofxButton addTagButton;
 	bool isFullscreen;
-	int GUI_WIDTH = 220;
 
 	ofxButton tabTags;
 	ofxButton tabLuminance;
@@ -139,7 +150,6 @@ public:
 	ofxButton tabFaceCount;
 	ofxButton tabEdgeDistribution;
 	ofxButton tabTexture;
-	int TAB_BAR_HEIGHT = 40;
 
 	ofxXmlSettings xml;
 
@@ -147,13 +157,10 @@ public:
 	int imageIndex = 0, videoIndex = 0;
 	int cellWidth, cellHeight;
 
-	typedef pair<float, float> Coordinate;
 	vector<Coordinate> video_coordinates, image_coordinates;
 
 	ofVideoGrabber vidGrabber;
 
-	//ofPixels video, ;
-	//ofTexture videoTexture;
 	int camWidth, camHeight;
 	bool paused, show_camera, image_resize, video_resize, mouse_moved;
 	int mouse_x, mouse_y;
@@ -161,25 +168,22 @@ public:
 	int selected_media_index;
 	string selected_media_type;
 
-	static const int BLANK_SPACE = 32;
-	static const int ROWS = 7;
-	static const int COLS = 5;
-	static const int SPACING = 10;
 	ofxCvHaarFinder finder;
 	ofImage img;
 
 	string metadataDir, metadataPath;
-	ofxCvColorImage			colorImg;
-	ofxCvGrayscaleImage 	grayImage;
-	ofxCvGrayscaleImage 	grayBg;
-	ofxCvGrayscaleImage 	grayDiff;
+	ofxCvColorImage colorImg;
+	ofxCvGrayscaleImage grayImage;
+	ofxCvGrayscaleImage grayBg;
+	ofxCvGrayscaleImage grayDiff;
 
-	ofxCvContourFinder 	contourFinder;
+	ofxCvContourFinder contourFinder;
 
-	int x;
-	int y;
+	int x_motion;
+	int y_motion;
 	ofRectangle rect;
 	bool bLearnBakground, see_movementcameras;
+
 private:
 	void addTags(xml_algorithms myObj, ofDirectory dir);
 	void getVideoFirstFrame();

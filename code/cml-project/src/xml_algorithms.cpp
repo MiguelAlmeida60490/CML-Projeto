@@ -1,4 +1,3 @@
-
 #define _USE_MATH_DEFINES
 
 #include "ofMain.h"
@@ -10,7 +9,7 @@ using namespace cv;
 using namespace ofxCv;
 
 
-int* xml_algorithms::getColor(ofImage img){
+int* xml_algorithms::getColor(ofImage img) {
 	ofPixels pixels = img.getPixels();
 
 	int r = 0, g = 0, b = 0, l = 0;
@@ -26,11 +25,11 @@ int* xml_algorithms::getColor(ofImage img){
 
 	int pixels_size = pixels.getWidth() * pixels.getHeight();
 
-	 avg_l = round((0.2125 * r + 0.7154 * g + 0.0721 * b) / pixels_size);
+	avg_l = round((0.2125 * r + 0.7154 * g + 0.0721 * b) / pixels_size);
 
-	 avgColor[0] = round(r/ pixels_size);
-	 avgColor[1] = round(g / pixels_size);
-	 avgColor[2] = round(b / pixels_size);
+	avgColor[0] = round(r / pixels_size);
+	avgColor[1] = round(g / pixels_size);
+	avgColor[2] = round(b / pixels_size);
 
 	return avgColor;
 }
@@ -56,25 +55,24 @@ void xml_algorithms::setFilter(ofImage img, bool edgesFilter) {
 
 	mat = toCv(img);
 
-	if(edgesFilter) {
-	double filter1[2][2] = { -1, 1, -1 , 1 };
-	double filter2[2][2] = { -1, -1, 1 , 1 };
-	double filter3[2][2] = { sqrt(2), 0, 0, -sqrt(2) };
-	double filter4[2][2] = { 0, sqrt(2), -sqrt(2) , 0 };
-	double filter5[2][2] = { 2, -2, -2,2 };
-	
+	if (edgesFilter) {
+		double filter1[2][2] = { -1, 1, -1 , 1 };
+		double filter2[2][2] = { -1, -1, 1 , 1 };
+		double filter3[2][2] = { sqrt(2), 0, 0, -sqrt(2) };
+		double filter4[2][2] = { 0, sqrt(2), -sqrt(2) , 0 };
+		double filter5[2][2] = { 2, -2, -2,2 };
 
-	Mat kernel1(2, 2, CV_64F, filter1);
-	Mat kernel2(2, 2, CV_64F, filter2);
-	Mat kernel3(2, 2, CV_64F, filter3);
-	Mat kernel4(2, 2, CV_64F, filter4);
-	Mat kernel5(2, 2, CV_64F, filter5);
 
-	for (int i = 0; i < NUM_EDGES_IMAGES;i++) {
-		filter2D(mat, output, -1, kernel1, Point(-1, -1), 0.0, BORDER_DEFAULT);
+		Mat kernel1(2, 2, CV_64F, filter1);
+		Mat kernel2(2, 2, CV_64F, filter2);
+		Mat kernel3(2, 2, CV_64F, filter3);
+		Mat kernel4(2, 2, CV_64F, filter4);
+		Mat kernel5(2, 2, CV_64F, filter5);
 
-		destArray.push_back(output);
-	}
+		for (int i = 0; i < NUM_EDGES_IMAGES; i++) {
+			filter2D(mat, output, -1, kernel1, Point(-1, -1), 0.0, BORDER_DEFAULT);
+			destArray.push_back(output);
+		}
 
 	}
 	else {
@@ -129,7 +127,7 @@ void xml_algorithms::setFilter(ofImage img, bool edgesFilter) {
 
 
 void xml_algorithms::setAverageFilter(ofImage* images[], bool edgesFilter) {
-	
+
 	int width = images[0]->getPixels().getWidth();
 	int height = images[0]->getPixels().getHeight();
 
@@ -180,12 +178,12 @@ void xml_algorithms::setAverageFilter(ofImage* images[], bool edgesFilter) {
 	int avg_l4 = round((0.2125 * r4 + 0.7154 * g4 + 0.0721 * b4) / pixels_size);
 	int avg_l5 = round((0.2125 * r5 + 0.7154 * g5 + 0.0721 * b5) / pixels_size);
 
-	if(edgesFilter){
-	avgEdges[0] = avg_l1;
-	avgEdges[1] = avg_l2;
-	avgEdges[2] = avg_l3;
-	avgEdges[3] = avg_l4;
-	avgEdges[4] = avg_l5;
+	if (edgesFilter) {
+		avgEdges[0] = avg_l1;
+		avgEdges[1] = avg_l2;
+		avgEdges[2] = avg_l3;
+		avgEdges[3] = avg_l4;
+		avgEdges[4] = avg_l5;
 	}
 	else {
 		int avg_l6 = round((0.2125 * r5 + 0.7154 * g5 + 0.0721 * b5) / pixels_size);
@@ -206,7 +204,7 @@ void xml_algorithms::setVarianceFilter(ofImage* images[], bool edgesFilter) {
 
 	int pixels_size = width * height;
 
-	double d1 = 0, d2 = 0, d3 = 0, d4 = 0, d5 = 0, d6=0;
+	double d1 = 0, d2 = 0, d3 = 0, d4 = 0, d5 = 0, d6 = 0;
 
 	for (int x = 0; x < width; x++) {
 		for (int y = 0; y < height; y++) {
@@ -229,8 +227,8 @@ void xml_algorithms::setVarianceFilter(ofImage* images[], bool edgesFilter) {
 				d4 += pow((l4 - avgEdges[3]), 2);
 				d5 += pow((l5 - avgEdges[4]), 2);
 			}
-	
-			else{
+
+			else {
 				ofColor color6 = images[5]->getPixels().getColor(x, y);
 				double l6 = 0.2125 * color6.r + 0.7154 * color6.g + 0.0721 * color6.b;
 
@@ -269,6 +267,39 @@ void xml_algorithms::setVarianceFilter(ofImage* images[], bool edgesFilter) {
 		devGabor[5] = dev6;
 	}
 
+}
+
+
+
+int xml_algorithms::getMatches(ofImage img1, ofImage img2) {
+	// Convert to OpenCV Mat
+	Mat img1_mat = toCv(img1);
+	Mat img2_mat = toCv(img2);
+
+	// Detect ORB keypoints and descriptors
+	Ptr<ORB> orb = ORB::create();
+
+	vector<KeyPoint> keypoints1, keypoints2;
+	Mat descriptors1, descriptors2;
+
+	orb->detectAndCompute(img1_mat, noArray(), keypoints1, descriptors1);
+	orb->detectAndCompute(img2_mat, noArray(), keypoints2, descriptors2);
+
+	// Match descriptors using BFMatcher
+	BFMatcher matcher(NORM_HAMMING);
+	vector<vector<DMatch>> knn_matches;
+	matcher.knnMatch(descriptors1, descriptors2, knn_matches, 2);
+
+	// Apply heuristic to find good matches
+	vector<DMatch> good_matches;
+	for (size_t i = 0; i < knn_matches.size(); i++) {
+		if (knn_matches[i][0].distance < 0.75 * knn_matches[i][1].distance) {
+			good_matches.push_back(knn_matches[i][0]);
+		}
+	}
+
+	int object_count = good_matches.size();
+	return object_count;
 }
 
 int* xml_algorithms::getVarianceEdges() {
