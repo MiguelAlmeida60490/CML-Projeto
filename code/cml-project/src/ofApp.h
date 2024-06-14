@@ -6,6 +6,7 @@
 #include <ofxGui.h>
 #include <ofxXmlSettings.h>
 #include <deque>
+#include <set>
 
 class xml_algorithms;
 
@@ -51,6 +52,24 @@ public:
 	void openEdgesFilter();
 	void openTexturesFilter();
 
+	void applyFilters();
+	void resetFilters();
+
+	bool isImageFiltered(const ImageWithPath& image);
+	bool isVideoFiltered(const VideoWithPath& video);
+
+	void updateLuminanceFilter(int& luminance);
+	void updateColorRFilter(int& r);
+	void updateColorGFilter(int& g);
+	void updateColorBFilter(int& b);
+	void updateNumFacesFilter(int& numFaces);
+	void updateAvgEdgeFilter(int& avgEdge);
+	void updateVarEdgeFilter(int& varEdge);
+	void updateAvgTextureFilter(int& avgTexture);
+	void updateVarTextureFilter(int& varTexture);
+
+	bool isFilterOpen();
+
 	bool isTagsOpen;
 	bool isColorOpen;
 	bool isLuminanceOpen;
@@ -58,15 +77,25 @@ public:
 	bool isEdgesOpen;
 	bool isTexturesOpen;
 
+	ofxPanel settings;
+	ofxButton resetFiltersButton;
+
 	ofDirectory dir;
 	vector<ImageWithPath> images;
 	vector<VideoWithPath> videos;
 
+	vector<ImageWithPath> filteredImages;
+	vector<VideoWithPath> filteredVideos;
+
 	ofxPanel tags;
-	vector<ofxLabel> tagsToDisplay;
+	ofxInputField<string> tagFilter;
 
 	ofxPanel colorSearch;
-	ofxColorSlider colorFilter;
+	ofxIntSlider colorR;
+	ofxIntSlider colorG;
+	ofxIntSlider colorB;
+	//ofxColorSlider colorFilter;
+
 
 	ofxPanel luminanceSearch;
 	ofxIntSlider luminanceFilter;
@@ -81,6 +110,13 @@ public:
 	ofxPanel texturesSearch;
 	ofxIntSlider avgTextFilter;
 	ofxIntSlider devTextFilter;
+
+	ofxButton applyFilterTagButton;
+	ofxButton applyFilterColorButton;
+	ofxButton applyFilterLuminanceButton;
+	ofxButton applyFilterNumFacesButton;
+	ofxButton applyFilterEdgesButton;
+	ofxButton applyFilterTexturesButton;
 
 	ofxPanel gui;
 	ofxToggle togFullscreen;
@@ -148,5 +184,5 @@ private:
 	void addTags(xml_algorithms myObj, ofDirectory dir);
 	void getVideoFirstFrame();
 	void genXML(ofDirectory dir, xml_algorithms myObj);
-
+	std::set<string> uniqueTags;
 };

@@ -2,6 +2,10 @@
 #include "ofFileUtils.h"
 #include "xml_algorithms.h"
 
+bool ofApp::isFilterOpen() {
+	return isTagsOpen || isColorOpen || isLuminanceOpen || isNumFacesOpen || isEdgesOpen || isTexturesOpen;
+}
+
 void ofApp::addTags(xml_algorithms myObj, ofDirectory dir) {
 	for (int i = 0; i < dir.size(); i++) {
 		string fileName = ofFilePath::getBaseName(dir.getName(i));
@@ -194,65 +198,130 @@ void ofApp::addTagButtonPressed() {
 	// Assuming you have the file path of the current media's XML file
 	string xmlPath;
 
-	if (pos_resize_image != -1) {
-		xmlPath = images[pos_resize_image].xmlPath;
-		cout << "Image" << endl;
-		cout << xmlPath << endl;
-	}
-	else if (pos_resize_video != -1) {
-		xmlPath = videos[pos_resize_video].xmlPath;
-		cout << "Video" << endl;
-		cout << xmlPath << endl;
-	}
-	else {
-		cout << "No Image or Video Selected" << endl;
-		return;
-	}
-
-	cout << "Attempting to load XML file: " << xmlPath << endl;
-
-	if (ofFile::doesFileExist(xmlPath)) {
-		if (xml.loadFile(xmlPath)) {
-			cout << "XML file loaded successfully: " << xmlPath << endl;
-
-			if (!xml.tagExists("metadata")) {
-				xml.addTag("metadata");
-			}
-			xml.pushTag("metadata");
-
-			if (!xml.tagExists("tags")) {
-				xml.addTag("tags");
-			}
-			xml.pushTag("tags");
-
-			int numTags = 0;
-			// Count tags with names starting with "tag"
-			while (xml.tagExists("tag" + ofToString(numTags))) {
-				numTags++;
-			}
-			string tagName = "tag" + ofToString(numTags); // Unique tag name
-			xml.addValue(tagName, newTag); // Add new tag
-			cout << "Added new tag: " << newTag << " as " << tagName << endl;
-
-			xml.popTag(); // tags
-			xml.popTag(); // metadata
-
-			if (xml.saveFile(xmlPath)) {
-				cout << "XML file saved successfully: " << xmlPath << endl;
-			}
-			else {
-				cout << "Failed to save XML file: " << xmlPath << endl;
-			}
-
-			newTagInput = "";
+	if (isFilterOpen()) {
+		if (pos_resize_image != -1) {
+			xmlPath = filteredImages[pos_resize_image].xmlPath;
+			cout << "Image" << endl;
+			cout << xmlPath << endl;
+		}
+		else if (pos_resize_video != -1) {
+			xmlPath = filteredVideos[pos_resize_video].xmlPath;
+			cout << "Video" << endl;
+			cout << xmlPath << endl;
 		}
 		else {
-			cout << "Failed to load XML file: " << xmlPath << endl;
+			cout << "No Image or Video Selected" << endl;
+			return;
+		}
+
+		cout << "Attempting to load XML file: " << xmlPath << endl;
+
+		if (ofFile::doesFileExist(xmlPath)) {
+			if (xml.loadFile(xmlPath)) {
+				cout << "XML file loaded successfully: " << xmlPath << endl;
+
+				if (!xml.tagExists("metadata")) {
+					xml.addTag("metadata");
+				}
+				xml.pushTag("metadata");
+
+				if (!xml.tagExists("tags")) {
+					xml.addTag("tags");
+				}
+				xml.pushTag("tags");
+
+				int numTags = 0;
+				// Count tags with names starting with "tag"
+				while (xml.tagExists("tag" + ofToString(numTags))) {
+					numTags++;
+				}
+				string tagName = "tag" + ofToString(numTags); // Unique tag name
+				xml.addValue(tagName, newTag); // Add new tag
+				cout << "Added new tag: " << newTag << " as " << tagName << endl;
+
+				xml.popTag(); // tags
+				xml.popTag(); // metadata
+
+				if (xml.saveFile(xmlPath)) {
+					cout << "XML file saved successfully: " << xmlPath << endl;
+				}
+				else {
+					cout << "Failed to save XML file: " << xmlPath << endl;
+				}
+
+				newTagInput = "";
+			}
+			else {
+				cout << "Failed to load XML file: " << xmlPath << endl;
+			}
+		}
+		else {
+			cout << "XML file does not exist: " << xmlPath << endl;
 		}
 	}
 	else {
-		cout << "XML file does not exist: " << xmlPath << endl;
+		if (pos_resize_image != -1) {
+			xmlPath = images[pos_resize_image].xmlPath;
+			cout << "Image" << endl;
+			cout << xmlPath << endl;
+		}
+		else if (pos_resize_video != -1) {
+			xmlPath = videos[pos_resize_video].xmlPath;
+			cout << "Video" << endl;
+			cout << xmlPath << endl;
+		}
+		else {
+			cout << "No Image or Video Selected" << endl;
+			return;
+		}
+
+		cout << "Attempting to load XML file: " << xmlPath << endl;
+
+		if (ofFile::doesFileExist(xmlPath)) {
+			if (xml.loadFile(xmlPath)) {
+				cout << "XML file loaded successfully: " << xmlPath << endl;
+
+				if (!xml.tagExists("metadata")) {
+					xml.addTag("metadata");
+				}
+				xml.pushTag("metadata");
+
+				if (!xml.tagExists("tags")) {
+					xml.addTag("tags");
+				}
+				xml.pushTag("tags");
+
+				int numTags = 0;
+				// Count tags with names starting with "tag"
+				while (xml.tagExists("tag" + ofToString(numTags))) {
+					numTags++;
+				}
+				string tagName = "tag" + ofToString(numTags); // Unique tag name
+				xml.addValue(tagName, newTag); // Add new tag
+				cout << "Added new tag: " << newTag << " as " << tagName << endl;
+
+				xml.popTag(); // tags
+				xml.popTag(); // metadata
+
+				if (xml.saveFile(xmlPath)) {
+					cout << "XML file saved successfully: " << xmlPath << endl;
+				}
+				else {
+					cout << "Failed to save XML file: " << xmlPath << endl;
+				}
+
+				newTagInput = "";
+			}
+			else {
+				cout << "Failed to load XML file: " << xmlPath << endl;
+			}
+		}
+		else {
+			cout << "XML file does not exist: " << xmlPath << endl;
+		}
 	}
+
+	
 }
 
 
@@ -303,7 +372,6 @@ void ofApp::setup() {
 
 	gui.setup("XML Info");
 
-	gui.add(togFullscreen.setup("Fullscreen", false));
 	gui.add(newTagInput.setup("New Tag", ""));
 	gui.add(addTagButton.setup("Add Tag"));
 	gui.add(luminance.setup("Luminance", ""));
@@ -313,46 +381,82 @@ void ofApp::setup() {
 	gui.add(varEdge.setup("Variant Edge", ""));
 	gui.add(avgText.setup("Average Texture", ""));
 	gui.add(varText.setup("Variant Texture", ""));
-	gui.add(screenSize.setup("Screen Size", ofToString(ofGetWidth()) + "x" + ofToString(ofGetHeight())));
+
+	settings.setup("Settings");
+	settings.add(togFullscreen.setup("Fullscreen", false));
+	settings.add(screenSize.setup("Screen Size", ofToString(ofGetWidth()) + "x" + ofToString(ofGetHeight())));
+	settings.add(resetFiltersButton.setup("Reset Filters"));
+	resetFiltersButton.addListener(this, &ofApp::resetFilters);
 
 	int value = (ofGetWidth() / 6);
 
 	tags.setup("Tags");
+	tags.add(tagFilter.setup("Tag", ""));
+	tags.add(applyFilterTagButton.setup("Apply Filter"));
 	tags.setPosition(0, TAB_BAR_HEIGHT);
 	tags.setDefaultWidth(value);
 
 	luminanceSearch.setup("Luminance Filter");
 	luminanceSearch.add(luminanceFilter.setup("Luminance", 50, 0, 255));
+	luminanceSearch.add(applyFilterLuminanceButton.setup("Apply Filter"));
 	luminanceSearch.setPosition(value, TAB_BAR_HEIGHT);
 	luminanceSearch.setDefaultWidth(value);
 
 	colorSearch.setup("Color Filter");
-	colorSearch.add(colorFilter.setup("Color", ofColor(100, 100, 100), ofColor(0, 0), ofColor(255, 255)));
+	//colorSearch.add(colorFilter.setup("Color", ofColor(100, 100, 100), ofColor(0, 0), ofColor(255, 255)));
+	colorSearch.add(colorR.setup("R", 100, 0, 255));
+	colorSearch.add(colorG.setup("G", 100, 0, 255));
+	colorSearch.add(colorB.setup("B", 100, 0, 255));
+	colorSearch.add(applyFilterColorButton.setup("Apply Filter"));
 	colorSearch.setPosition(value * 2, TAB_BAR_HEIGHT);	
 	colorSearch.setDefaultWidth(value);
 
 	numFacesSearch.setup("Number of Faces");
 	numFacesSearch.add(numFacesFilter.setup("Number of Faces", 0, 0, 100));
+	numFacesSearch.add(applyFilterNumFacesButton.setup("Apply Filter"));
 	numFacesSearch.setPosition(value*3, TAB_BAR_HEIGHT);
 	numFacesSearch.setDefaultWidth(value);
 
 	edgesSearch.setup("Edges Distribution");
 	edgesSearch.add(avgEdgeFilter.setup("Average Edge", 0, 0, 30));
 	edgesSearch.add(devEdgeFilter.setup("Variant Edge", 0, 0, 30));
+	edgesSearch.add(applyFilterEdgesButton.setup("Apply Filter"));
 	edgesSearch.setPosition(value*4, TAB_BAR_HEIGHT);
 	edgesSearch.setDefaultWidth(value);
 
 	texturesSearch.setup("Textures");
 	texturesSearch.add(avgTextFilter.setup("Average Texture", 0, 0, 30));
 	texturesSearch.add(devTextFilter.setup("Variant Texture", 0, 0, 30));
+	texturesSearch.add(applyFilterTexturesButton.setup("Apply Filter"));
 	texturesSearch.setPosition(value*5, TAB_BAR_HEIGHT);
 	texturesSearch.setDefaultWidth(value);
 
+	//Filters
+	luminanceFilter.addListener(this, &ofApp::updateLuminanceFilter);
+	//colorFilter.addListener(this, &ofApp::updateColorFilter);
+	colorR.addListener(this, &ofApp::updateColorRFilter);
+	colorG.addListener(this, &ofApp::updateColorGFilter);
+	colorB.addListener(this, &ofApp::updateColorBFilter);
+	numFacesFilter.addListener(this, &ofApp::updateNumFacesFilter);
+	avgEdgeFilter.addListener(this, &ofApp::updateAvgEdgeFilter);
+	devEdgeFilter.addListener(this, &ofApp::updateVarEdgeFilter);
+	avgTextFilter.addListener(this, &ofApp::updateAvgTextureFilter);
+	devTextFilter.addListener(this, &ofApp::updateVarTextureFilter);
 
-	int guiX = 0;
+	applyFilterColorButton.addListener(this, &ofApp::applyFilters);
+	applyFilterLuminanceButton.addListener(this, &ofApp::applyFilters);
+	applyFilterNumFacesButton.addListener(this, &ofApp::applyFilters);
+	applyFilterEdgesButton.addListener(this, &ofApp::applyFilters);
+	applyFilterTexturesButton.addListener(this, &ofApp::applyFilters);
+	applyFilterTagButton.addListener(this, &ofApp::applyFilters);
+
+	int guiX = 5;
 	int guiY = TAB_BAR_HEIGHT + 100; // Adjust Y position for the GUI to be below the tabs
 	gui.setPosition(guiX, guiY);
 	gui.minimize();
+
+	settings.setPosition(guiX, guiY + 200);
+	settings.minimize();
 
 	togFullscreen.addListener(this, &ofApp::toggleFullscreen);
 	addTagButton.addListener(this, &ofApp::addTagButtonPressed);
@@ -503,6 +607,303 @@ void ofApp::openTexturesFilter() {
 	}
 }
 
+void ofApp::updateLuminanceFilter(int& luminance) {
+	// Update filter logic if needed
+	cout << "Change Luminance" << endl;
+}
+
+void ofApp::updateColorRFilter(int& r) {
+	// Update filter logic if needed
+	cout << "Change Color R" << endl;
+}
+
+void ofApp::updateColorGFilter(int& r) {
+	// Update filter logic if needed
+	cout << "Change Color G" << endl;
+}
+
+void ofApp::updateColorBFilter(int& r) {
+	// Update filter logic if needed
+	cout << "Change Color B" << endl;
+}
+
+void ofApp::updateNumFacesFilter(int& numFaces) {
+	// Update filter logic if needed
+	cout << "Change Num Faces" << endl;
+}
+
+void ofApp::updateAvgEdgeFilter(int& avgEdge) {
+	// Update filter logic if needed
+	cout << "Change Avg Edge" << endl;
+}
+
+void ofApp::updateVarEdgeFilter(int& varEdge) {
+	// Update filter logic if needed
+	cout << "Change Var Edge" << endl;
+}
+
+void ofApp::updateAvgTextureFilter(int& avgTexture) {
+	// Update filter logic if needed
+	cout << "Change Avg Texture" << endl;
+}
+
+void ofApp::updateVarTextureFilter(int& varTexture) {
+	// Update filter logic if needed
+	cout << "Change Var Texture" << endl;
+}
+
+bool ofApp::isImageFiltered(const ImageWithPath& image) {
+	string xmlPath = image.xmlPath;
+	if (xml.load(xmlPath)) {
+		if (isTagsOpen) {
+			if (!xml.tagExists("metadata")) {
+				xml.addTag("metadata");
+			}
+			xml.pushTag("metadata");
+
+			if (!xml.tagExists("tags")) {
+				xml.addTag("tags");
+			}
+			xml.pushTag("tags");
+			int numTags = 0;
+			// Count tags with names starting with "tag"
+			while (xml.tagExists("tag" + ofToString(numTags))) {
+				string tagLabel = "tag" + ofToString(numTags);
+				std::string tag = xml.getValue(tagLabel, "");
+				std::string tagFilterValue = tagFilter;
+
+				if (tag == tagFilterValue) {
+					return true;
+				}
+				numTags++;
+			}
+			xml.popTag();
+			xml.popTag();
+		}
+		if (isColorOpen) {
+			int r = xml.getValue("metadata:color:r", -1);
+			int g = xml.getValue("metadata:color:g", -1);
+			int b = xml.getValue("metadata:color:b", -1);
+
+			if (r == -1 || g == -1 || b == -1) {
+				cout << "Colors not extracted correctly" << endl;
+			}
+			else {
+				if ((r >= colorR - 5 && r <= colorR + 5) &&
+					(g >= colorG - 5 && g <= colorG + 5) &&
+					(b >= colorB - 5 && b <= colorB + 5)) {
+					return true;
+				}
+			}
+		}
+		if (isLuminanceOpen) {
+			int luminance = xml.getValue("metadata:luminance:luminance", -1);
+			if (luminance == -1) {
+				cout << "Luminance not extracted correctly" << endl;
+			}
+			else {
+				if (luminance >= luminanceFilter - 5 && luminance <= luminanceFilter + 5) {
+					return true;
+				}
+			}
+		}
+		if (isNumFacesOpen) {
+			int numFaces = xml.getValue("metadata:numberFaces:numberOfFaces", -1);
+			if (numFaces == -1) {
+				cout << "Number of Faces not extracted correctly";
+			}
+			else {
+				if (numFaces >= numFacesFilter - 2 && numFaces <= numFacesFilter + 2) {
+					return true;
+				}
+			}
+		}
+		if (isEdgesOpen) {
+			int avgEdgeSum = 0;
+			for (int i = 0; i < 6; i++) {
+				string xmlLocation = "metadata:textures:avgEdges:avg_l" + ofToString(i + 1);
+				avgEdgeSum += xml.getValue(xmlLocation, 0);
+			}
+			int avgEdge = avgEdgeSum / 6;
+
+			// VAR
+			int varEdgeSum = 0;
+			for (int i = 0; i < 6; i++) {
+				string xmlLocation = "metadata:textures:varEdges:dev" + ofToString(i + 1);
+				varEdgeSum += xml.getValue(xmlLocation, 0);
+			}
+			int varEdge = varEdgeSum / 6;
+
+			if ((avgEdge >= avgEdgeFilter - 3 && avgEdge <= avgEdgeFilter + 3) &&
+				(varEdge >= devEdgeFilter - 3 && varEdge <= devEdgeFilter + 3)) {
+				return true;
+			}
+		}
+		if (isTexturesOpen) {
+			// AVG
+			int avgTextSum = 0;
+			for (int i = 0; i < 6; i++) {
+				string xmlLocation = "metadata:textures:avgTextures:avg_l" + ofToString(i + 1);
+				avgTextSum += xml.getValue(xmlLocation, 0);
+			}
+			int avgText = avgTextSum / 6;
+
+			// VAR
+			int varTextSum = 0;
+			for (int i = 0; i < 6; i++) {
+				string xmlLocation = "metadata:textures:varTextures:dev" + ofToString(i + 1);
+				varTextSum += xml.getValue(xmlLocation, 0);
+			}
+			int varText = varTextSum / 6;
+
+			if ((avgText >= avgTextFilter - 3 && avgText <= avgTextFilter + 3) &&
+				(varText >= devTextFilter - 3 && varText <= devTextFilter + 3)) {
+				return true;
+			}
+		}
+	}
+	else {
+		cout << "Could not load xml file";
+	}
+	return false;
+}
+
+bool ofApp::isVideoFiltered(const VideoWithPath& video) {
+	string xmlPath = video.xmlPath;
+	if (xml.load(xmlPath)) {
+		if (isTagsOpen) {
+			if (!xml.tagExists("metadata")) {
+				xml.addTag("metadata");
+			}
+			xml.pushTag("metadata");
+
+			if (!xml.tagExists("tags")) {
+				xml.addTag("tags");
+			}
+			xml.pushTag("tags");
+			int numTags = 0;
+			// Count tags with names starting with "tag"
+			while (xml.tagExists("tag" + ofToString(numTags))) {
+				string tagLabel = "tag" + ofToString(numTags);
+				std::string tag = xml.getValue(tagLabel, "");
+				std::string tagFilterValue = tagFilter;
+
+				if (tag == tagFilterValue) {
+					return true;
+				}
+				numTags++;
+			}
+		}
+		if (isColorOpen) {
+			int r = xml.getValue("metadata:color:r", -1);
+			int g = xml.getValue("metadata:color:g", -1);
+			int b = xml.getValue("metadata:color:b", -1);
+
+			if (r == -1 || g == -1 || b == -1) {
+				cout << "Colors not extracted correctly" << endl;
+			}
+			else {
+				if ((r >= colorR - 5 && r <= colorR + 5) &&
+					(g >= colorG - 5 && g <= colorG + 5) &&
+					(b >= colorB - 5 && b <= colorB + 5)) {
+					return true;
+				}
+			}
+		}
+		if (isLuminanceOpen) {
+			int luminance = xml.getValue("metadata:luminance:luminance", -1);
+			if (luminance == -1) {
+				cout << "Luminance not extracted correctly" << endl;
+			}
+			else {
+				if (luminance >= luminanceFilter - 5 && luminance <= luminanceFilter + 5) {
+					return true;
+				}
+			}
+		}
+		if (isNumFacesOpen) {
+			int numFaces = xml.getValue("metadata:numberFaces:numberOfFaces", -1);
+			if (numFaces == -1) {
+				cout << "Number of Faces not extracted correctly";
+			}
+			else {
+				if (numFaces >= numFacesFilter - 2 && numFaces <= numFacesFilter + 2) {
+					return true;
+				}
+			}
+		}
+		if (isEdgesOpen) {
+			int avgEdgeSum = 0;
+			for (int i = 0; i < 6; i++) {
+				string xmlLocation = "metadata:textures:avgEdges:avg_l" + ofToString(i + 1);
+				avgEdgeSum += xml.getValue(xmlLocation, 0);
+			}
+			int avgEdge = avgEdgeSum / 6;
+
+			// VAR
+			int varEdgeSum = 0;
+			for (int i = 0; i < 6; i++) {
+				string xmlLocation = "metadata:textures:varEdges:dev" + ofToString(i + 1);
+				varEdgeSum += xml.getValue(xmlLocation, 0);
+			}
+			int varEdge = varEdgeSum / 6;
+
+			if ((avgEdge >= avgEdgeFilter - 3 && avgEdge <= avgEdgeFilter + 3) &&
+				(varEdge >= devEdgeFilter - 3 && varEdge <= devEdgeFilter + 3)) {
+				return true;
+			}
+		}
+		if (isTexturesOpen) {
+			// AVG
+			int avgTextSum = 0;
+			for (int i = 0; i < 6; i++) {
+				string xmlLocation = "metadata:textures:avgTextures:avg_l" + ofToString(i + 1);
+				avgTextSum += xml.getValue(xmlLocation, 0);
+			}
+			int avgText = avgTextSum / 6;
+
+			// VAR
+			int varTextSum = 0;
+			for (int i = 0; i < 6; i++) {
+				string xmlLocation = "metadata:textures:varTextures:dev" + ofToString(i + 1);
+				varTextSum += xml.getValue(xmlLocation, 0);
+			}
+			int varText = varTextSum / 6;
+
+			if ((avgText >= avgTextFilter - 3 && avgText <= avgTextFilter + 3) &&
+				(varText >= devTextFilter - 3 && varText <= devTextFilter + 3)) {
+				return true;
+			}
+		}
+	}
+	else {
+		cout << "Could not load xml file";
+	}
+	return false;
+}
+
+void ofApp::applyFilters() {
+	filteredImages.clear(); // Clear filtered images vector
+	filteredVideos.clear();
+
+	for (auto& image : images) {
+		if (isImageFiltered(image)) {
+			filteredImages.push_back(image); // Add filtered image
+		}
+	}
+
+	for (auto& video : videos) {
+		if (isVideoFiltered(video)) {
+			filteredVideos.push_back(video);
+		}
+	}
+}
+
+void ofApp::resetFilters() {
+	filteredImages.clear();
+	filteredVideos.clear();
+}
+
 void ofApp::loadMedia(string filePath) {
 	if (xml.loadFile(filePath)) {
 		updateGUIFromXML(xml);
@@ -514,8 +915,6 @@ void ofApp::loadMedia(string filePath) {
 
 void ofApp::updateGUIFromXML(ofxXmlSettings& xml) {
 	// Clear previous tags
-	tags.clear();
-	tagsToDisplay.clear();
 
 	if (pos_resize_image == -1 && pos_resize_video == -1) {
 		cout << "No image or video has been selected" << endl;
@@ -523,92 +922,131 @@ void ofApp::updateGUIFromXML(ofxXmlSettings& xml) {
 	}
 
 	std::string xmlPath;
-	if (pos_resize_image != -1) {
-		xmlPath = images[pos_resize_image].xmlPath;
-	}
-	else if (pos_resize_video != -1) {
-		xmlPath = videos[pos_resize_video].xmlPath;
-	}
 
-	if (xml.load(xmlPath)) {
-		// Parse and display tags
-		xml.pushTag("metadata");
-		xml.pushTag("tags");
-
-		int numTags = 0;
-		// Count tags with names starting with "tag"
-		while (xml.tagExists("tag" + ofToString(numTags))) {
-			numTags++;
+	if (isFilterOpen()) {
+		if (pos_resize_image != -1) {
+			xmlPath = filteredImages[pos_resize_image].xmlPath;
+		}
+		else if (pos_resize_video != -1) {
+			xmlPath = filteredVideos[pos_resize_video].xmlPath;
 		}
 
-		cout << "Number of tags: " << numTags << endl; // Debugging
+		if (xml.load(xmlPath)) {
 
-		for (int i = 0; i < numTags; i++) {
-			std::string tagName = "tag" + ofToString(i);
-			std::string tag = xml.getValue(tagName, "");
-			if (!tag.empty()) {
-				ofxLabel* tagToAdd = new ofxLabel();
-				tagToAdd->setup("", tag);
-				tags.add(tagToAdd); // Add label to the panel
-				tagsToDisplay.push_back(*tagToAdd);
-				cout << "Tag added: " << tag << endl; // Debugging
+			// Color
+			int r = xml.getValue("metadata:color:r", 0);
+			int g = xml.getValue("metadata:color:g", 0);
+			int b = xml.getValue("metadata:color:b", 0);
+			string colorText = "{" + ofToString(r) + ", " + ofToString(g) + ", " + ofToString(b) + "}";
+			color = colorText;
+
+			// Luminance
+			luminance = ofToString(xml.getValue("metadata:luminance:luminance", 0.5));
+
+			// Number of Faces
+			numFaces = ofToString(xml.getValue("metadata:numberFaces:numberOfFaces", 0));
+
+			// Edges
+			// AVG
+			int avgEdgeSum = 0;
+			for (int i = 0; i < 5; i++) {
+				string xmlLocation = "metadata:edges:avgEdges:avg_l" + ofToString(i + 1);
+				avgEdgeSum += xml.getValue(xmlLocation, 0);
 			}
+			avgEdge = ofToString(avgEdgeSum / 5);
+
+			// VAR
+			int varEdgeSum = 0;
+			for (int i = 0; i < 5; i++) {
+				string xmlLocation = "metadata:edges:varEdges:dev" + ofToString(i + 1);
+				varEdgeSum += xml.getValue(xmlLocation, 0);
+			}
+			varEdge = ofToString(varEdgeSum / 5);
+
+			// Textures
+			// AVG
+			int avgTextSum = 0;
+			for (int i = 0; i < 6; i++) {
+				string xmlLocation = "metadata:textures:avgTextures:avg_l" + ofToString(i + 1);
+				avgTextSum += xml.getValue(xmlLocation, 0);
+			}
+			avgText = ofToString(avgTextSum / 6);
+
+			// VAR
+			int varTextSum = 0;
+			for (int i = 0; i < 6; i++) {
+				string xmlLocation = "metadata:textures:varTextures:dev" + ofToString(i + 1);
+				varTextSum += xml.getValue(xmlLocation, 0);
+			}
+			varText = ofToString(varTextSum / 6);
+
 		}
-
-		xml.popTag(); // tags
-		xml.popTag(); // metadata
-
-		// Color
-		int r = xml.getValue("metadata:color:r", 0);
-		int g = xml.getValue("metadata:color:g", 0);
-		int b = xml.getValue("metadata:color:b", 0);
-		string colorText = "{" + ofToString(r) + ", " + ofToString(g) + ", " + ofToString(b) + "}";
-		color = colorText;
-
-		// Luminance
-		luminance = ofToString(xml.getValue("metadata:luminance:luminance", 0.5));
-
-		// Number of Faces
-		numFaces = ofToString(xml.getValue("metadata:numberFaces:numberOfFaces", 0));
-
-		// Edges
-		// AVG
-		int avgEdgeSum = 0;
-		for (int i = 0; i < 5; i++) {
-			string xmlLocation = "metadata:edges:avgEdges:avg_l" + ofToString(i + 1);
-			avgEdgeSum += xml.getValue(xmlLocation, 0);
+		else {
+			cout << "Failed to load XML: " << xmlPath << endl;
 		}
-		avgEdge = ofToString(avgEdgeSum / 5);
-
-		// VAR
-		int varEdgeSum = 0;
-		for (int i = 0; i < 5; i++) {
-			string xmlLocation = "metadata:edges:varEdges:dev" + ofToString(i + 1);
-			varEdgeSum += xml.getValue(xmlLocation, 0);
-		}
-		varEdge = ofToString(varEdgeSum / 5);
-
-		// Textures
-		// AVG
-		int avgTextSum = 0;
-		for (int i = 0; i < 6; i++) {
-			string xmlLocation = "metadata:textures:avgTextures:avg_l" + ofToString(i + 1);
-			avgTextSum += xml.getValue(xmlLocation, 0);
-		}
-		avgText = ofToString(avgTextSum / 6);
-
-		// VAR
-		int varTextSum = 0;
-		for (int i = 0; i < 6; i++) {
-			string xmlLocation = "metadata:textures:varTextures:dev" + ofToString(i + 1);
-			varTextSum += xml.getValue(xmlLocation, 0);
-		}
-		varText = ofToString(varTextSum / 6);
-
 	}
 	else {
-		cout << "Failed to load XML: " << xmlPath << endl;
+		if (pos_resize_image != -1) {
+			xmlPath = images[pos_resize_image].xmlPath;
+		}
+		else if (pos_resize_video != -1) {
+			xmlPath = videos[pos_resize_video].xmlPath;
+		}
+
+		if (xml.load(xmlPath)) {
+			// Color
+			int r = xml.getValue("metadata:color:r", 0);
+			int g = xml.getValue("metadata:color:g", 0);
+			int b = xml.getValue("metadata:color:b", 0);
+			string colorText = "{" + ofToString(r) + ", " + ofToString(g) + ", " + ofToString(b) + "}";
+			color = colorText;
+
+			// Luminance
+			luminance = ofToString(xml.getValue("metadata:luminance:luminance", 0.5));
+
+			// Number of Faces
+			numFaces = ofToString(xml.getValue("metadata:numberFaces:numberOfFaces", 0));
+
+			// Edges
+			// AVG
+			int avgEdgeSum = 0;
+			for (int i = 0; i < 5; i++) {
+				string xmlLocation = "metadata:edges:avgEdges:avg_l" + ofToString(i + 1);
+				avgEdgeSum += xml.getValue(xmlLocation, 0);
+			}
+			avgEdge = ofToString(avgEdgeSum / 5);
+
+			// VAR
+			int varEdgeSum = 0;
+			for (int i = 0; i < 5; i++) {
+				string xmlLocation = "metadata:edges:varEdges:dev" + ofToString(i + 1);
+				varEdgeSum += xml.getValue(xmlLocation, 0);
+			}
+			varEdge = ofToString(varEdgeSum / 5);
+
+			// Textures
+			// AVG
+			int avgTextSum = 0;
+			for (int i = 0; i < 6; i++) {
+				string xmlLocation = "metadata:textures:avgTextures:avg_l" + ofToString(i + 1);
+				avgTextSum += xml.getValue(xmlLocation, 0);
+			}
+			avgText = ofToString(avgTextSum / 6);
+
+			// VAR
+			int varTextSum = 0;
+			for (int i = 0; i < 6; i++) {
+				string xmlLocation = "metadata:textures:varTextures:dev" + ofToString(i + 1);
+				varTextSum += xml.getValue(xmlLocation, 0);
+			}
+			varText = ofToString(varTextSum / 6);
+
+		}
+		else {
+			cout << "Failed to load XML: " << xmlPath << endl;
+		}
 	}
+	
 }
 
 
@@ -690,97 +1128,194 @@ void ofApp::draw() {
 	int currentI = 0;
 	int currentV = 0;
 
-	for (int row = 0; row < ROWS; row++) {
-		for (int col = 0; col < COLS; col++) {
-			int x = col * (cellWidth + SPACING) + SPACING + GUI_WIDTH; // Adjust x position for GUI width
-			int y = row * (cellHeight + SPACING) + SPACING + TAB_BAR_HEIGHT; // Adjust y position for tab bar height
+	if (isFilterOpen()) {
+		for (int row = 0; row < ROWS; row++) {
+			for (int col = 0; col < COLS; col++) {
+				int x = col * (cellWidth + SPACING) + SPACING + GUI_WIDTH; // Adjust x position for GUI width
+				int y = row * (cellHeight + SPACING) + SPACING + TAB_BAR_HEIGHT; // Adjust y position for tab bar height
 
+				ofSetColor(ofColor::white);
+
+				if (currentI < filteredImages.size()) {
+					if (pos_resize_image != currentI) {
+						filteredImages[currentI].image.draw(x, y, cellWidth, cellHeight); // Position and size
+						image_coordinates.push_back({ x, y });
+					}
+					else {
+						filteredImages[currentI].image.bind();
+					}
+					currentI++;
+				}
+				else if (currentV < filteredVideos.size()) {
+					if (pos_resize_video != currentV) {
+						filteredVideos[currentV].video.draw(x, y, cellWidth, cellHeight); // Position and size
+						video_coordinates.push_back({ x, y });
+					}
+					else {
+						filteredVideos[currentV].video.bind();
+					}
+					currentV++;
+				}
+				ofSetColor(ofColor::gray);
+			}
+		}
+
+		if (pos_resize_image != -1 && !mouse_moved) {
+			for (int i = 0; i < image_coordinates.size(); i++) {
+				int x = image_coordinates[i].first;
+				int y = image_coordinates[i].second;
+
+				ofSetColor(ofColor::white);
+				filteredImages[pos_resize_image].image.resize(cellWidth + 100, cellWidth + 100);
+				if (x >= 815 && y >= 550 && pos_resize_image == i) {
+					filteredImages[pos_resize_image].image.draw(x - 100, y - 200);
+				}
+				else if (x >= 815 && pos_resize_image == i) {
+					filteredImages[pos_resize_image].image.draw(x - 100, y);
+				}
+				else if (y >= 550 && pos_resize_image == i) {
+					filteredImages[pos_resize_image].image.draw(x, y - 200);
+				}
+				else {
+					if (pos_resize_image == i) {
+						filteredImages[pos_resize_image].image.draw(x, y);
+					}
+				}
+				ofSetColor(ofColor::gray);
+			}
+		}
+
+		if (pos_resize_video != -1 && !mouse_moved) {
+			for (int i = 0; i < video_coordinates.size(); i++) {
+				int x = video_coordinates[i].first;
+				int y = video_coordinates[i].second;
+				ofSetColor(ofColor::white);
+				if (x >= 815 && y >= 550 && pos_resize_video == i) {
+					filteredVideos[pos_resize_video].video.draw(x - 100, y - 200, cellWidth + 100, cellWidth + 100);
+				}
+				else if (x >= 815 && pos_resize_video == i) {
+					filteredVideos[pos_resize_video].video.draw(x - 100, y, cellWidth + 100, cellWidth + 100);
+				}
+				else if (y >= 550 && pos_resize_video == i) {
+					filteredVideos[pos_resize_video].video.draw(x, y - 200, cellWidth + 100, cellWidth + 100);
+				}
+				else {
+					if (pos_resize_video == i) {
+						filteredVideos[pos_resize_video].video.draw(x, y, cellWidth + 100, cellWidth + 100);
+					}
+				}
+				ofSetColor(ofColor::gray);
+			}
+		}
+
+		if (pos_resize_video != -1 && mouse_moved) {
 			ofSetColor(ofColor::white);
+			filteredVideos[pos_resize_video].video.draw(mouse_x, mouse_y, cellWidth + 100, cellWidth + 100);
+			ofSetColor(ofColor::gray);
+		}
 
-			if (currentI < images.size()) {
-				if (pos_resize_image != currentI) {
-					images[currentI].image.draw(x, y, cellWidth, cellHeight); // Position and size
-					image_coordinates.push_back({ x, y });
-				}
-				else {
-					images[currentI].image.bind();
-				}
-				currentI++;
-			}
-			else if (currentV < videos.size()) {
-				if (pos_resize_video != currentV) {
-					videos[currentV].video.draw(x, y, cellWidth, cellHeight); // Position and size
-					video_coordinates.push_back({ x, y });
-				}
-				else {
-					videos[currentV].video.bind();
-				}
-				currentV++;
-			}
+		if (pos_resize_image != -1 && mouse_moved) {
+			ofSetColor(ofColor::white);
+			filteredImages[pos_resize_image].image.resize(cellWidth + 100, cellWidth + 100);
+			filteredImages[pos_resize_image].image.draw(mouse_x, mouse_y);
 			ofSetColor(ofColor::gray);
 		}
 	}
+	else {
+		for (int row = 0; row < ROWS; row++) {
+			for (int col = 0; col < COLS; col++) {
+				int x = col * (cellWidth + SPACING) + SPACING + GUI_WIDTH; // Adjust x position for GUI width
+				int y = row * (cellHeight + SPACING) + SPACING + TAB_BAR_HEIGHT; // Adjust y position for tab bar height
 
-	if (pos_resize_image != -1 && !mouse_moved) {
-		for (int i = 0; i < image_coordinates.size(); i++) {
-			int x = image_coordinates[i].first;
-			int y = image_coordinates[i].second;
+				ofSetColor(ofColor::white);
 
+				if (currentI < images.size()) {
+					if (pos_resize_image != currentI) {
+						images[currentI].image.draw(x, y, cellWidth, cellHeight); // Position and size
+						image_coordinates.push_back({ x, y });
+					}
+					else {
+						images[currentI].image.bind();
+					}
+					currentI++;
+				}
+				else if (currentV < videos.size()) {
+					if (pos_resize_video != currentV) {
+						videos[currentV].video.draw(x, y, cellWidth, cellHeight); // Position and size
+						video_coordinates.push_back({ x, y });
+					}
+					else {
+						videos[currentV].video.bind();
+					}
+					currentV++;
+				}
+				ofSetColor(ofColor::gray);
+			}
+		}
+
+		if (pos_resize_image != -1 && !mouse_moved) {
+			for (int i = 0; i < image_coordinates.size(); i++) {
+				int x = image_coordinates[i].first;
+				int y = image_coordinates[i].second;
+
+				ofSetColor(ofColor::white);
+				images[pos_resize_image].image.resize(cellWidth + 100, cellWidth + 100);
+				if (x >= 815 && y >= 550 && pos_resize_image == i) {
+					images[pos_resize_image].image.draw(x - 100, y - 200);
+				}
+				else if (x >= 815 && pos_resize_image == i) {
+					images[pos_resize_image].image.draw(x - 100, y);
+				}
+				else if (y >= 550 && pos_resize_image == i) {
+					images[pos_resize_image].image.draw(x, y - 200);
+				}
+				else {
+					if (pos_resize_image == i) {
+						images[pos_resize_image].image.draw(x, y);
+					}
+				}
+				ofSetColor(ofColor::gray);
+			}
+		}
+
+		if (pos_resize_video != -1 && !mouse_moved) {
+			for (int i = 0; i < video_coordinates.size(); i++) {
+				int x = video_coordinates[i].first;
+				int y = video_coordinates[i].second;
+				ofSetColor(ofColor::white);
+				if (x >= 815 && y >= 550 && pos_resize_video == i) {
+					videos[pos_resize_video].video.draw(x - 100, y - 200, cellWidth + 100, cellWidth + 100);
+				}
+				else if (x >= 815 && pos_resize_video == i) {
+					videos[pos_resize_video].video.draw(x - 100, y, cellWidth + 100, cellWidth + 100);
+				}
+				else if (y >= 550 && pos_resize_video == i) {
+					videos[pos_resize_video].video.draw(x, y - 200, cellWidth + 100, cellWidth + 100);
+				}
+				else {
+					if (pos_resize_video == i) {
+						videos[pos_resize_video].video.draw(x, y, cellWidth + 100, cellWidth + 100);
+					}
+				}
+				ofSetColor(ofColor::gray);
+			}
+		}
+
+		if (pos_resize_video != -1 && mouse_moved) {
+			ofSetColor(ofColor::white);
+			videos[pos_resize_video].video.draw(mouse_x, mouse_y, cellWidth + 100, cellWidth + 100);
+			ofSetColor(ofColor::gray);
+		}
+
+		if (pos_resize_image != -1 && mouse_moved) {
 			ofSetColor(ofColor::white);
 			images[pos_resize_image].image.resize(cellWidth + 100, cellWidth + 100);
-			if (x >= 815 && y >= 550 && pos_resize_image == i) {
-				images[pos_resize_image].image.draw(x - 100, y - 200);
-			}
-			else if (x >= 815 && pos_resize_image == i) {
-				images[pos_resize_image].image.draw(x - 100, y);
-			}
-			else if (y >= 550 && pos_resize_image == i) {
-				images[pos_resize_image].image.draw(x, y - 200);
-			}
-			else {
-				if (pos_resize_image == i) {
-					images[pos_resize_image].image.draw(x, y);
-				}
-			}
+			images[pos_resize_image].image.draw(mouse_x, mouse_y);
 			ofSetColor(ofColor::gray);
 		}
 	}
 
-	if (pos_resize_video != -1 && !mouse_moved) {
-		for (int i = 0; i < video_coordinates.size(); i++) {
-			int x = video_coordinates[i].first;
-			int y = video_coordinates[i].second;
-			ofSetColor(ofColor::white);
-			if (x >= 815 && y >= 550 && pos_resize_video == i) {
-				videos[pos_resize_video].video.draw(x - 100, y - 200, cellWidth + 100, cellWidth + 100);
-			}
-			else if (x >= 815 && pos_resize_video == i) {
-				videos[pos_resize_video].video.draw(x - 100, y, cellWidth + 100, cellWidth + 100);
-			}
-			else if (y >= 550 && pos_resize_video == i) {
-				videos[pos_resize_video].video.draw(x, y - 200, cellWidth + 100, cellWidth + 100);
-			}
-			else {
-				if (pos_resize_video == i) {
-					videos[pos_resize_video].video.draw(x, y, cellWidth + 100, cellWidth + 100);
-				}
-			}
-			ofSetColor(ofColor::gray);
-		}
-	}
-
-	if (pos_resize_video != -1 && mouse_moved) {
-		ofSetColor(ofColor::white);
-		videos[pos_resize_video].video.draw(mouse_x, mouse_y, cellWidth + 100, cellWidth + 100);
-		ofSetColor(ofColor::gray);
-	}
-
-	if (pos_resize_image != -1 && mouse_moved) {
-		ofSetColor(ofColor::white);
-		images[pos_resize_image].image.resize(cellWidth + 100, cellWidth + 100);
-		images[pos_resize_image].image.draw(mouse_x, mouse_y);
-		ofSetColor(ofColor::gray);
-	}
+	
 
 	if (show_camera) {
 		ofSetHexColor(0xffffff);
@@ -793,43 +1328,32 @@ void ofApp::draw() {
 	}
 
 	if (isTagsOpen) {
-		if (pos_resize_image != -1 || pos_resize_video != -1) {
-			tags.draw();
-		}
+		tags.draw();
 	}
 
 	if (isLuminanceOpen) {
-		if (pos_resize_image != -1 || pos_resize_video != -1) {
-			luminanceSearch.draw();
-		}
+		luminanceSearch.draw();
 	}
 
 	if (isColorOpen) {
-		if (pos_resize_image != -1 || pos_resize_video != -1) {
-			colorSearch.draw();
-		}
+		colorSearch.draw();
 	}
 
 	if (isNumFacesOpen) {
-		if (pos_resize_image != -1 || pos_resize_video != -1) {
-			numFacesSearch.draw();
-		}
+		numFacesSearch.draw();
 	}
 
 	if (isEdgesOpen) {
-		if (pos_resize_image != -1 || pos_resize_video != -1) {
-			edgesSearch.draw();
-		}
+		edgesSearch.draw();
 	}
 
 	if (isTexturesOpen) {
-		if (pos_resize_image != -1 || pos_resize_video != -1) {
-			texturesSearch.draw();
-		}
+		texturesSearch.draw();		
 	}
 
 	// Draw the GUI last to ensure it is on top of everything else
 	gui.draw();
+	settings.draw();
 
 	
 	if (see_movementcameras) {
@@ -890,18 +1414,34 @@ void ofApp::drawTabs() {
 void ofApp::keyPressed(int key) {
 	switch (key) {
 	case BLANK_SPACE:
-		if (pos_resize_video != -1) {
-			paused = !paused;
-			videos[pos_resize_video].video.setPaused(paused);
+		if (isFilterOpen()) {
+			if (pos_resize_video != -1) {
+				paused = !paused;
+				filteredVideos[pos_resize_video].video.setPaused(paused);
+			}
+		}
+		else {
+			if (pos_resize_video != -1) {
+				paused = !paused;
+				videos[pos_resize_video].video.setPaused(paused);
+			}
 		}
 		break;
 	case 99: //c
 		show_camera = !show_camera;
 		break;
 	case 112://p -> play video
-		if (pos_resize_video != -1) {
-			videos[pos_resize_video].video.play();
-			paused = false;
+		if (isFilterOpen()) {
+			if (pos_resize_video != -1) {
+				filteredVideos[pos_resize_video].video.play();
+				paused = false;
+			}
+		}
+		else {
+			if (pos_resize_video != -1) {
+				videos[pos_resize_video].video.play();
+				paused = false;
+			}
 		}
 		break;
 	case '+':
@@ -964,20 +1504,37 @@ void ofApp::mousePressed(int x, int y, int button) {
 			}
 		}
 	}
-	
-	if (pos_resize_video != -1 && ((selected_media_index != pos_resize_video) || (selected_media_index == pos_resize_video && selected_media_type != "video"))) {
-		loadMedia(videos[pos_resize_video].xmlPath);
-		selected_media_index = pos_resize_video;
-		selected_media_type = "video";
-	}
-	else if(pos_resize_image != -1 && ((selected_media_index != pos_resize_image) || (selected_media_index == pos_resize_image && selected_media_type != "image"))) {
-		loadMedia(images[pos_resize_image].xmlPath);
-		selected_media_index = pos_resize_image;
-		selected_media_type = "image";
+	if (isFilterOpen()) {
+		if (pos_resize_video != -1 && ((selected_media_index != pos_resize_video) || (selected_media_index == pos_resize_video && selected_media_type != "video"))) {
+			loadMedia(filteredVideos[pos_resize_video].xmlPath);
+			selected_media_index = pos_resize_video;
+			selected_media_type = "video";
+		}
+		else if (pos_resize_image != -1 && ((selected_media_index != pos_resize_image) || (selected_media_index == pos_resize_image && selected_media_type != "image"))) {
+			loadMedia(filteredImages[pos_resize_image].xmlPath);
+			selected_media_index = pos_resize_image;
+			selected_media_type = "image";
+		}
+		else {
+			cout << "No media to load" << endl;
+		}
 	}
 	else {
-		cout << "No media to load" << endl;
+		if (pos_resize_video != -1 && ((selected_media_index != pos_resize_video) || (selected_media_index == pos_resize_video && selected_media_type != "video"))) {
+			loadMedia(videos[pos_resize_video].xmlPath);
+			selected_media_index = pos_resize_video;
+			selected_media_type = "video";
+		}
+		else if (pos_resize_image != -1 && ((selected_media_index != pos_resize_image) || (selected_media_index == pos_resize_image && selected_media_type != "image"))) {
+			loadMedia(images[pos_resize_image].xmlPath);
+			selected_media_index = pos_resize_image;
+			selected_media_type = "image";
+		}
+		else {
+			cout << "No media to load" << endl;
+		}
 	}
+
 }
 //--------------------------------------------------------------
 void ofApp::mouseReleased(int x, int y, int button) {
