@@ -32,8 +32,8 @@ public:
 	static const int ROWS = 7;
 	static const int COLS = 5;
 	static const int SPACING = 10;
-	int GUI_WIDTH = 220;
-	int TAB_BAR_HEIGHT = 40;
+	static const int GUI_WIDTH = 220;
+	static const int TAB_BAR_HEIGHT = 40;
 
 	void setup();
 	void update();
@@ -193,8 +193,4 @@ private:
 	void getVideoFirstFrame();
 	void genXML(ofDirectory dir, xml_algorithms myObj);
 	std::set<string> uniqueTags;
-
-	unsigned long startTime;
-	bool isDelayed;
-	unsigned long delayDuration = 200;
 };
