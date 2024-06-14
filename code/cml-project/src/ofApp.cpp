@@ -1156,17 +1156,7 @@ void ofApp::update() {
 		int y_min = rect.getMinY();
 		int y_max = rect.getMaxY();
 
-
-		if (x_motion >= x_max && x_motion <= x_min && y_motion >= y_min && y_motion <= y_max) {//if user moves head to the right to the green cross
-			cout << "Full Screen" << endl;
-			//ofSetFullscreen(true);
-			//isFullscreen = true;
-			//ofSetWindowShape(1920, 1080);
-			show_camera = false;
-			see_movementcameras = false;
-		}
-
-		else  if (rLast.getCenter().x == rect.getCenter().x + 3 || rLast.getCenter().y == rect.getCenter().y + 3) {//if user move hands
+		if (rLast.getCenter().x == rect.getCenter().x + 3 || rLast.getCenter().y == rect.getCenter().y + 3) {//if user move hands
 			cout << "Show camera" << endl;
 			show_camera = true;
 			see_movementcameras = false;
