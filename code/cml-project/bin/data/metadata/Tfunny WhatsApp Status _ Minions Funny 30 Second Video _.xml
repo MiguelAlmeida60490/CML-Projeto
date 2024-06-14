@@ -45,4 +45,7 @@
     <numberFaces>
         <numberOfFaces>5</numberOfFaces>
     </numberFaces>
+    <numberObjects>
+        <numberObjects>4</numberObjects>
+    </numberObjects>
 </metadata>

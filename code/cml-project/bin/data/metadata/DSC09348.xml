@@ -1,10 +1,5 @@
 <metadata>
-    <tags>
-        <tag0>people</tag0>
-        <tag1>heads</tag1>
-        <tag2>work</tag2>
-        <tag3>blue shirt</tag3>
-    </tags>
+    <tags></tags>
     <color>
         <r>89</r>
         <g>85</g>
@@ -50,4 +45,7 @@
     <numberFaces>
         <numberOfFaces>20</numberOfFaces>
     </numberFaces>
+    <numberObjects>
+        <numberObjects>500</numberObjects>
+    </numberObjects>
 </metadata>

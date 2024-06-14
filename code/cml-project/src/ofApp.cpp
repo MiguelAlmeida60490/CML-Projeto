@@ -3,7 +3,7 @@
 #include "xml_algorithms.h"
 
 bool ofApp::isFilterOpen() {
-	return isTagsOpen || isColorOpen || isLuminanceOpen || isNumFacesOpen || isEdgesOpen || isTexturesOpen;
+	return isTagsOpen || isColorOpen || isLuminanceOpen || isNumFacesOpen || isNumObjectsOpen || isEdgesOpen || isTexturesOpen;
 }
 
 void ofApp::addTags(xml_algorithms myObj, ofDirectory dir) {
@@ -402,7 +402,7 @@ void ofApp::setup() {
 	settings.add(resetFiltersButton.setup("Reset Filters"));
 	resetFiltersButton.addListener(this, &ofApp::resetFilters);
 
-	int value = (ofGetWidth() / 6);
+	int value = (ofGetWidth() / 7);
 
 	tags.setup("Tags");
 	tags.add(tagFilter.setup("Tag", ""));
@@ -417,7 +417,6 @@ void ofApp::setup() {
 	luminanceSearch.setDefaultWidth(value);
 
 	colorSearch.setup("Color Filter");
-	//colorSearch.add(colorFilter.setup("Color", ofColor(100, 100, 100), ofColor(0, 0), ofColor(255, 255)));
 	colorSearch.add(colorR.setup("R", 100, 0, 255));
 	colorSearch.add(colorG.setup("G", 100, 0, 255));
 	colorSearch.add(colorB.setup("B", 100, 0, 255));
@@ -431,18 +430,24 @@ void ofApp::setup() {
 	numFacesSearch.setPosition(value*3, TAB_BAR_HEIGHT);
 	numFacesSearch.setDefaultWidth(value);
 
+	numObjectsSearch.setup("Number of Objects");
+	numObjectsSearch.add(numObjectsFilter.setup("Number of Objects", 0, 0, 200));
+	numObjectsSearch.add(applyFilterNumObjectsButton.setup("Apply FIlter"));
+	numObjectsSearch.setPosition(value * 4, TAB_BAR_HEIGHT);
+	numObjectsSearch.setDefaultWidth(value);
+
 	edgesSearch.setup("Edges Distribution");
 	edgesSearch.add(avgEdgeFilter.setup("Average Edge", 0, 0, 30));
 	edgesSearch.add(devEdgeFilter.setup("Variant Edge", 0, 0, 30));
 	edgesSearch.add(applyFilterEdgesButton.setup("Apply Filter"));
-	edgesSearch.setPosition(value*4, TAB_BAR_HEIGHT);
+	edgesSearch.setPosition(value*5, TAB_BAR_HEIGHT);
 	edgesSearch.setDefaultWidth(value);
 
 	texturesSearch.setup("Textures");
 	texturesSearch.add(avgTextFilter.setup("Average Texture", 0, 0, 30));
 	texturesSearch.add(devTextFilter.setup("Variant Texture", 0, 0, 30));
 	texturesSearch.add(applyFilterTexturesButton.setup("Apply Filter"));
-	texturesSearch.setPosition(value*5, TAB_BAR_HEIGHT);
+	texturesSearch.setPosition(value*6, TAB_BAR_HEIGHT);
 	texturesSearch.setDefaultWidth(value);
 
 	//Filters
@@ -460,6 +465,7 @@ void ofApp::setup() {
 	applyFilterColorButton.addListener(this, &ofApp::applyFilters);
 	applyFilterLuminanceButton.addListener(this, &ofApp::applyFilters);
 	applyFilterNumFacesButton.addListener(this, &ofApp::applyFilters);
+	applyFilterNumObjectsButton.addListener(this, &ofApp::applyFilters);
 	applyFilterEdgesButton.addListener(this, &ofApp::applyFilters);
 	applyFilterTexturesButton.addListener(this, &ofApp::applyFilters);
 	applyFilterTagButton.addListener(this, &ofApp::applyFilters);
@@ -469,7 +475,7 @@ void ofApp::setup() {
 	gui.setPosition(guiX, guiY);
 	gui.minimize();
 
-	settings.setPosition(guiX, guiY + 200);
+	settings.setPosition(guiX, guiY + 250);
 	settings.minimize();
 
 	togFullscreen.addListener(this, &ofApp::toggleFullscreen);
@@ -480,6 +486,7 @@ void ofApp::setup() {
 	isColorOpen = false;
 	isLuminanceOpen = false;
 	isNumFacesOpen = false;
+	isNumObjectsOpen = false;
 	isEdgesOpen = false;
 	isTexturesOpen = false;
 
@@ -495,10 +502,13 @@ void ofApp::setup() {
 	tabFaceCount.setup("Face Count");
 	tabFaceCount.addListener(this, &ofApp::openNumFacesFilter);
 
-	tabEdgeDistribution.setup("Edge Distribution");
+	tabObjectCount.setup("Object Count");
+	tabObjectCount.addListener(this, &ofApp::openNumObjectsFilter);
+
+	tabEdgeDistribution.setup("Edges");
 	tabEdgeDistribution.addListener(this, &ofApp::openEdgesFilter);
 
-	tabTexture.setup("Texture");
+	tabTexture.setup("Textures");
 	tabTexture.addListener(this, &ofApp::openTexturesFilter);
 
 	for (int i  = 0; i < dir.size(); i++) {
@@ -551,6 +561,7 @@ void ofApp::openTags() {
 		isColorOpen = false;
 		isLuminanceOpen = false;
 		isNumFacesOpen = false;
+		isNumObjectsOpen = false;
 		isEdgesOpen = false;
 		isTexturesOpen = false;
 	}
@@ -564,6 +575,7 @@ void ofApp::openColorFilter() {
 		isTagsOpen = false;
 		isLuminanceOpen = false;
 		isNumFacesOpen = false;
+		isNumObjectsOpen = false;
 		isEdgesOpen = false;
 		isTexturesOpen = false;
 	}
@@ -577,6 +589,7 @@ void ofApp::openLuminanceFilter() {
 		isTagsOpen = false;
 		isColorOpen = false;
 		isNumFacesOpen = false;
+		isNumObjectsOpen = false;
 		isEdgesOpen = false;
 		isTexturesOpen = false;
 	}
@@ -590,6 +603,21 @@ void ofApp::openNumFacesFilter() {
 		isTagsOpen = false;
 		isLuminanceOpen = false;
 		isColorOpen = false;
+		isNumObjectsOpen = false;
+		isEdgesOpen = false;
+		isTexturesOpen = false;
+	}
+}
+
+void ofApp::openNumObjectsFilter() {
+	isNumObjectsOpen = !isNumObjectsOpen;
+
+	// Close other panels if needed
+	if (isNumObjectsOpen) {
+		isTagsOpen = false;
+		isLuminanceOpen = false;
+		isColorOpen = false;
+		isNumFacesOpen = false;
 		isEdgesOpen = false;
 		isTexturesOpen = false;
 	}
@@ -604,6 +632,7 @@ void ofApp::openEdgesFilter() {
 		isLuminanceOpen = false;
 		isColorOpen = false;
 		isNumFacesOpen = false;
+		isNumObjectsOpen = false;
 		isTexturesOpen = false;
 	}
 }
@@ -617,6 +646,7 @@ void ofApp::openTexturesFilter() {
 		isLuminanceOpen = false;
 		isColorOpen = false;
 		isNumFacesOpen = false;
+		isNumObjectsOpen = false;
 		isEdgesOpen = false;
 	}
 }
@@ -728,6 +758,17 @@ bool ofApp::isImageFiltered(const ImageWithPath& image) {
 			}
 			else {
 				if (numFaces >= numFacesFilter - 2 && numFaces <= numFacesFilter + 2) {
+					return true;
+				}
+			}
+		}
+		if (isNumObjectsOpen) {
+			int numObjects = xml.getValue("metadata:numberObjects:numberObjects", -1);
+			if (numObjects == -1) {
+				cout << "Number of Objects not extracted correctly";
+			}
+			else {
+				if (numObjects >= numObjectsFilter - 5 && numObjects <= numObjectsFilter + 5) {
 					return true;
 				}
 			}
@@ -960,6 +1001,9 @@ void ofApp::updateGUIFromXML(ofxXmlSettings& xml) {
 			// Number of Faces
 			numFaces = ofToString(xml.getValue("metadata:numberFaces:numberOfFaces", 0));
 
+			//Number of Objects
+			numObjects = ofToString(xml.getValue("metadata:numberObjects:numberObjects", 0));
+
 			// Edges
 			// AVG
 			int avgEdgeSum = 0;
@@ -1020,6 +1064,8 @@ void ofApp::updateGUIFromXML(ofxXmlSettings& xml) {
 
 			// Number of Faces
 			numFaces = ofToString(xml.getValue("metadata:numberFaces:numberOfFaces", 0));
+
+			numObjects = ofToString(xml.getValue("metadata:numberObjects:numberObjects", 0));
 
 			// Edges
 			// AVG
@@ -1357,6 +1403,10 @@ void ofApp::draw() {
 		numFacesSearch.draw();
 	}
 
+	if (isNumObjectsOpen) {
+		numObjectsSearch.draw();
+	}
+
 	if (isEdgesOpen) {
 		edgesSearch.draw();
 	}
@@ -1394,7 +1444,7 @@ void ofApp::draw() {
 }
 
 void ofApp::drawTabs() {
-	int tabWidth = ofGetWidth()/6;
+	int tabWidth = ofGetWidth()/7;
 	int tabHeight = 35;
 	int tabSpacing = 0;
 	int y = 0; // Starting Y position for the tabs
@@ -1415,11 +1465,15 @@ void ofApp::drawTabs() {
 	tabFaceCount.setSize(tabWidth, tabHeight);
 	tabFaceCount.draw();
 
-	tabEdgeDistribution.setPosition(4 * tabWidth + 5 * tabSpacing, y);
+	tabObjectCount.setPosition(4 * tabWidth + 5 * tabSpacing, y);
+	tabObjectCount.setSize(tabWidth, tabHeight);
+	tabObjectCount.draw();
+
+	tabEdgeDistribution.setPosition(5 * tabWidth + 6 * tabSpacing, y);
 	tabEdgeDistribution.setSize(tabWidth, tabHeight);
 	tabEdgeDistribution.draw();
 
-	tabTexture.setPosition(5 * tabWidth + 6 * tabSpacing, y);
+	tabTexture.setPosition(6 * tabWidth + 7 * tabSpacing, y);
 	tabTexture.setSize(tabWidth, tabHeight);
 	tabTexture.draw();
 }

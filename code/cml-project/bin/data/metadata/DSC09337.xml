@@ -1,7 +1,5 @@
 <metadata>
-    <tags>
-        <tag0>openFrameworks</tag0>
-    </tags>
+    <tags></tags>
     <color>
         <r>208</r>
         <g>173</g>
@@ -47,4 +45,7 @@
     <numberFaces>
         <numberOfFaces>0</numberOfFaces>
     </numberFaces>
+    <numberObjects>
+        <numberObjects>0</numberObjects>
+    </numberObjects>
 </metadata>

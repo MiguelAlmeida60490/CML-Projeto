@@ -60,6 +60,7 @@ public:
 	void openColorFilter();
 	void openLuminanceFilter();
 	void openNumFacesFilter();
+	void openNumObjectsFilter();
 	void openEdgesFilter();
 	void openTexturesFilter();
 
@@ -85,6 +86,7 @@ public:
 	bool isColorOpen;
 	bool isLuminanceOpen;
 	bool isNumFacesOpen;
+	bool isNumObjectsOpen;
 	bool isEdgesOpen;
 	bool isTexturesOpen;
 
@@ -114,6 +116,9 @@ public:
 	ofxPanel numFacesSearch;
 	ofxIntSlider numFacesFilter;
 
+	ofxPanel numObjectsSearch;
+	ofxIntSlider numObjectsFilter;
+
 	ofxPanel edgesSearch;
 	ofxIntSlider avgEdgeFilter;
 	ofxIntSlider devEdgeFilter;
@@ -126,6 +131,7 @@ public:
 	ofxButton applyFilterColorButton;
 	ofxButton applyFilterLuminanceButton;
 	ofxButton applyFilterNumFacesButton;
+	ofxButton applyFilterNumObjectsButton;
 	ofxButton applyFilterEdgesButton;
 	ofxButton applyFilterTexturesButton;
 
@@ -148,6 +154,7 @@ public:
 	ofxButton tabLuminance;
 	ofxButton tabColor;
 	ofxButton tabFaceCount;
+	ofxButton tabObjectCount;
 	ofxButton tabEdgeDistribution;
 	ofxButton tabTexture;
 
